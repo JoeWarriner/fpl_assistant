@@ -87,9 +87,6 @@ def get_best_single_trade(team: list[str], player_data: pd.DataFrame) -> dict[st
             best_trade['points_differential'] = points_differential
         
     return best_trade
-        
-
-
 
 
     

@@ -1,16 +1,18 @@
 from fastapi import FastAPI, Query
+from fastapi.middleware.cors import CORSMiddleware
 from typing import Annotated, Union
 from lp import get_clean_data, get_optimised_team, get_best_single_trade
 
 app = FastAPI()
 
-
+app.add_middleware(CORSMiddleware, allow_origins=['*'])
 @app.get('/best-team')
 async def best_team():
     '''
     Get an optimised team:
     http://localhost:8000/best-team
     '''
+    
     data = get_clean_data()
     team = get_optimised_team(data)
     return team
