@@ -1,3 +1,4 @@
+- [ ] Create remote git repo.
 - [ ] Add linting pre-commit hooks.
 - [ ] Check everything in requirements file is actually needed!
 - [ ] Change from player names to IDs

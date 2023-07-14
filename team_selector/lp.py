@@ -71,7 +71,7 @@ def get_best_single_trade(team: list[str], player_data: pd.DataFrame) -> dict[st
 
         trade_money_available = team_data['now_cost'][i] + spare_cash
 
-        # Get available players for this trade:
+        # Get available players for this trade:     
         available_players = player_data[player_data['element_type'] == team_data['element_type'][i]] 
         available_players = available_players[available_players['now_cost'] <= trade_money_available]
         this_trade_unavailable_teams = [team for team in unavailable_teams if team != team_data['team'][i]]
