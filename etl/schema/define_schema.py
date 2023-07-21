@@ -15,10 +15,10 @@ jobs = [
 
 for job in jobs:
 
-    with open(f'etl/db_definition/{job}.sql') as file:
+    with open(f'etl/schema/{job}.sql') as file:
         create_table_command = file.read()
 
-    drop_table_command = f'DROP TABLE IF EXISTS {job} CASCADE'
+    drop_table_command = f'DROP TABLE IF EXISTS {job} CASCADE;'
         
     with psycopg2.connect("dbname=fantasyfootballassistant user=postgres") as conn:
         try:
@@ -30,4 +30,5 @@ for job in jobs:
             print(drop_table_command)
             print(create_table_command)
             raise e
+        
         

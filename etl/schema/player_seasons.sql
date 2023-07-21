@@ -1,4 +1,4 @@
-CREATE TABLE playerseasons (
+CREATE TABLE player_seasons (
 	id serial PRIMARY KEY,
 	fpl_id integer, 
 	player integer,
