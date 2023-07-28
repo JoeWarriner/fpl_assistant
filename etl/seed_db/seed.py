@@ -2,15 +2,18 @@ import pandas as pd
 import psycopg2
 import json
 import datetime
+from typing import Union
 from pathlib import Path
 import requests
 import os
+import numpy as np
 import sqlalchemy
+
 data_path = Path(os.getcwd(), 'etl', 'input', 'data')
 
 PRIOR_SEASONS_LABELS = [
-    '2016-17',
-    '2017-18',
+    # '2016-17',
+    # '2017-18',
     '2018-19',
     '2019-20',
     '2020-21',
@@ -18,48 +21,67 @@ PRIOR_SEASONS_LABELS = [
     '2022-23',
 ]
 
-def extract_seasons():
+
+def extract_seasons(engine: sqlalchemy.Engine):
     seasons = pd.DataFrame(
-        columns = ['is_current', 'start_year'],
+        columns = ['is_current', 'start_year', 'season'],
         data = [
-            [False, 2016],
-            [False, 2017],
-            [False, 2018],
-            [False, 2019],
-            [False, 2020],
-            [False, 2021],
-            [False, 2022],            
-            [True, 2023]            
+            # [False, 2016],
+            # [False, 2017],
+            [False, 2018, '2018-19'],
+            [False, 2019, '2019-20'],
+            [False, 2020, '2020-21'],
+            [False, 2021, '2021-22'],
+            [False, 2022, '2022-23'],            
+            [True, 2023, '2023-24']            
         ]
     )
 
     engine = sqlalchemy.create_engine("postgresql+psycopg2://postgres@localhost/fantasyfootballassistant")
     seasons.to_sql('seasons', if_exists= 'append', con=engine, index=False)
 
-def extract_players(): 
-    player_data = pd.DataFrame(columns= ['first_name', 'second_name'])
-    for season in PRIOR_SEASONS_LABELS:
-        season_player_data = pd.read_csv(data_path / season /'players_raw.csv', encoding = 'latin1')
-        season_player_data = season_player_data[['first_name', 'second_name', 'code']]
-        player_data = pd.concat([player_data, season_player_data])
-        
-    player_data = player_data.drop_duplicates(subset=['code']).rename(columns = {'code':'fpl_id'})
+def get_data_for_all_seasons(engine: sqlalchemy.Engine, filename: Union[Path, str], columns = None, include_seasons_col = True) -> pd.DataFrame:
+    season_query = f'SELECT id, season FROM seasons WHERE is_current = false  ;'
+    seasons = engine.connect().execute(sqlalchemy.text(season_query)).all()
 
-    player_data.to_csv('etl/temp_data/players.csv', index=False)    
-    engine = sqlalchemy.create_engine("postgresql+psycopg2://postgres@localhost/fantasyfootballassistant")
-
-    player_data.to_sql('players', if_exists= 'append', con=engine, index=False)
-
-def extract_teams():
-    seasons_data = []
-    for season in PRIOR_SEASONS_LABELS:
+    season_data_list = []
+    for season, season_str in seasons:
         try:
-            data = pd.read_csv(data_path / season /'teams.csv', encoding = 'latin1')
-            seasons_data.append(data[['code', 'name', 'short_name']])
+            season_data = pd.read_csv(data_path / season_str / filename, encoding = 'latin1')
+            if columns:
+                season_data = season_data[columns]
+            if include_seasons_col:
+                season_data['season'] = season
+            season_data_list.append(season_data)
         except FileNotFoundError:
-            print(f'No teams file for season: {season}')
+            print(f'No {filename} file found for season: {season_str}')
+    
+    all_season_data = pd.concat(season_data_list)
+    return all_season_data
+
 
     
+
+def extract_players(engine): 
+    player_data = get_data_for_all_seasons(
+                        engine, 
+                        filename = Path('players_raw.csv'), 
+                        columns=['first_name', 'second_name', 'code'], 
+                        include_seasons_col=False
+                    ).drop_duplicates(subset=['code']
+                    ).rename(columns = {'code':'fpl_id'}
+                    ).to_sql('players', if_exists= 'append', con=engine, index=False)
+
+
+def extract_teams(engine):
+
+    team_data = get_data_for_all_seasons(
+                        engine, 
+                        Path('teams.csv'), 
+                        columns=['code', 'name', 'short_name'],
+                        include_seasons_col=False
+                    )   
+
     # The following teams only appeared in seasons where summarised team data isn't available.
     # Team codes derived manually from players in the squad that season.
     missing_teams = pd.DataFrame(
@@ -74,58 +96,133 @@ def extract_teams():
             [38, 'Huddersfield', 'HUD'],
         ]
     )
-    seasons_data.append(missing_teams)
-    team_data =  pd.concat(seasons_data).drop_duplicates(subset=['code']).rename(columns= {'code' : 'fpl_id', 'name': 'team_name'})
-    engine = sqlalchemy.create_engine("postgresql+psycopg2://postgres@localhost/fantasyfootballassistant")
-    team_data.to_sql('teams', if_exists='append', con = engine, index = False)
+    
+    pd.concat([team_data, missing_teams]
+        ).drop_duplicates(subset=['code']
+        ).rename(columns= {'code' : 'fpl_id', 'name': 'team_name'}
+        ).to_sql('teams', if_exists='append', con = engine, index = False)
 
 
-def extract_positions():
-    api_data = requests.get("https://fantasy.premierleague.com/api/bootstrap-static/")
-    api_data_dict = api_data.json()
-    positions = api_data_dict['element_types']
-    positions_df = pd.DataFrame(positions)
-    positions_df = positions_df[['id','singular_name', 'singular_name_short']].rename(columns= {'id': 'fpl_id', 'singular_name': 'pos_name', 'singular_name_short': 'short_name'})
-    engine = sqlalchemy.create_engine("postgresql+psycopg2://postgres@localhost/fantasyfootballassistant")
-    positions_df.to_sql('positions', if_exists='append', con=engine, index=False)
+def extract_team_seasons(engine: sqlalchemy.Engine):
+    teams_query = f'SELECT id as team, fpl_id as fpl_perm_id FROM teams' 
+    teams = pd.DataFrame(engine.connect().execute(sqlalchemy.text(teams_query)))
 
-def extract_gameweeks():
-    seasons_list = []
-    engine = sqlalchemy.create_engine("postgresql+psycopg2://postgres@localhost/fantasyfootballassistant")
+    get_data_for_all_seasons(engine, Path('players_raw.csv'), columns=['team', 'team_code']
+        ).drop_duplicates(
+        ).rename(columns={'team_code': 'fpl_perm_id', 'team': 'fpl_temp_id'}
+        ).merge(teams, how='left', left_on=['fpl_perm_id'], right_on=['fpl_perm_id']
+        ).drop(columns=['fpl_perm_id']
+        ).rename(columns= {'fpl_temp_id':'fpl_id'}
+        ).to_sql('team_seasons', if_exists='append', con=engine, index=False)
+    
+        
 
-    for season in PRIOR_SEASONS_LABELS:
-        season_data = pd.read_csv(data_path / season / 'gws' / 'merged_gw.csv', encoding='latin1')
-        season_gameweeks = season_data[['kickoff_time', 'GW']].groupby(['GW']).min()
+def extract_positions(engine: sqlalchemy.Engine):
 
-        season_query = f'SELECT id FROM seasons where start_year = {season.split("-")[0]};'
-        season_id = engine.connect().execute(sqlalchemy.text(season_query)).all()[0][0]
-        season_gameweeks['season'] = season_id
-        seasons_list.append(season_gameweeks)
-
-    output = pd.concat(seasons_list).reset_index()
-    output['is_current'] = False
-    output['finished'] = True
-    output['is_next'] = False
-    output['is_previous'] = False
-    output['kickoff_time'] = output['kickoff_time'].apply(lambda x: datetime.datetime.strptime(x, r'%Y-%m-%dT%H:%M:%SZ'))
-
-    output.loc[output['kickoff_time'].idxmax(), 'is_previous'] = True
-    output = output.rename(columns={'GW': 'gw_number', 'kickoff_time': 'deadline_time'})
-    output.to_sql('gameweeks', if_exists='append', con=engine, index=False)
+    positions_api_data = requests.get("https://fantasy.premierleague.com/api/bootstrap-static/"
+                                      ).json(
+                                      )['element_types']
+    
+    pd.DataFrame(positions_api_data
+            )[['id','singular_name', 'singular_name_short']
+            ].rename(columns= {'id': 'fpl_id', 'singular_name': 'pos_name', 'singular_name_short': 'short_name'}
+            ).to_sql('positions', if_exists='append', con=engine, index=False)
 
 
+def extract_gameweeks(engine: sqlalchemy.Engine):
 
+    gameweek_data = get_data_for_all_seasons(engine, Path('gws','merged_gw.csv'), columns = ['kickoff_time', 'GW']
+            ).groupby(['GW','season']
+            ).min(
+            ).reset_index(
+            ).assign(
+                is_current = False,
+                is_next = False, 
+                finished = True,
+                deadline_time = lambda df: [datetime.datetime.strptime(value, r'%Y-%m-%dT%H:%M:%SZ') for value in df['kickoff_time']],
+                is_previous = lambda df: [(value == df['deadline_time'].max()) for value in df['deadline_time']]
+            ).drop(columns=['kickoff_time']
+            ).rename(columns = {'GW':'gw_number'}
+            ).to_sql('gameweeks', if_exists='append', con=engine, index=False)
+    
+    # gameweek_data.loc[gameweek_data['kickoff_time'].idxmax(), 'is_previous'] = True
+        
+        
 
+def extract_fixtures(engine: sqlalchemy.Engine):
 
+    team_season_query = f'SELECT fpl_id as team_season_id, team, season FROM team_seasons;'
+    team_seasons = pd.DataFrame(engine.connect().execute(sqlalchemy.text(team_season_query)).all())
 
-            
+    gameweek_query = f'SELECT id as gameweek, season, gw_number FROM gameweeks;'
+    gameweeks = pd.DataFrame(engine.connect().execute(sqlalchemy.text(gameweek_query)).all())
 
-
+    fixtures_columns = ['event', 'finished', 'started', 'team_a', 'team_h', 'kickoff_time', 'id', 'team_a_score', 'team_h_score']
+    fixtures_data = get_data_for_all_seasons(engine, Path('fixtures.csv'), columns = fixtures_columns
+                        )
     
 
-if __name__ == "__main__":
-    extract_seasons()
-    extract_players()
-    extract_teams()
-    extract_positions()
-    extract_gameweeks()
+    fixtures_data = fixtures_data.merge(
+                            team_seasons, 
+                            how='left', 
+                            left_on=['team_a', 'season'], 
+                            right_on=['team_season_id', 'season']
+                        ).drop(columns=['team_a','team_season_id']
+                        ).rename(columns={'team': 'away_team'})
+    
+    fixtures_data = fixtures_data.merge(
+                            team_seasons, 
+                            how='left', 
+                            left_on=['team_h', 'season'], 
+                            right_on=['team_season_id', 'season']
+                        ).drop(columns=['team_h','team_season_id']
+                        ).rename(columns={'team': 'home_team'})
+    
+    fixtures_data = fixtures_data.merge(
+                            gameweeks, 
+                            how='left', 
+                            left_on=['season', 'event'], 
+                            right_on=['season', 'gw_number']
+                        ).drop(columns=['gw_number', 'event']) 
+
+
+    fixtures_data['kickoff_time'] = fixtures_data['kickoff_time'].apply(lambda x: datetime.datetime.strptime(x, r'%Y-%m-%dT%H:%M:%SZ'))
+
+    fixtures_data.rename(
+                    columns = {
+                        'team_a_score': 'away_team_score', 
+                        'team_h_score': 'home_team_score', 
+                        'id': 'fpl_id'
+                }).to_sql('fixtures', if_exists='append', con=engine, index=False)
+
+
+def extract_player_fixtures(engine: sqlalchemy.Engine):
+    ## IN PROGRESS
+    
+    fixtures_query = 'SELECT id as fixture_id, season, fpl_id from fixtures;'
+    fixtures = pd.DataFrame(engine.connect().execute(sqlalchemy.text(fixtures_query)).all())
+
+    fixtures_data = get_data_for_all_seasons(engine, Path('gws', 'merged_gw.csv'))
+    fixtures_data = fixtures_data.merge(fixtures,
+                            left_on = ['fixture', 'season'],
+                            right_on = ['fpl_id', 'season']
+                        )
+    
+    print(fixtures_data)
+
+
+
+                
+
+def run():    
+    engine = sqlalchemy.create_engine("postgresql+psycopg2://postgres@localhost/fantasyfootballassistant")
+
+    extract_seasons(engine)
+    extract_players(engine)
+    extract_teams(engine)
+    extract_team_seasons(engine)
+    extract_positions(engine)
+    extract_gameweeks(engine)
+    extract_fixtures(engine)
+    extract_player_fixtures(engine)
+

@@ -1,6 +1,6 @@
 CREATE TABLE team_seasons (
 	id serial PRIMARY KEY,
-	team_fpl_id integer,
+	fpl_id integer,
 	team integer, 
 	season integer, 
     FOREIGN KEY (team)
