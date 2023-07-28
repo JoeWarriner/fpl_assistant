@@ -5,7 +5,7 @@ CREATE TABLE gameweeks (
 	is_previous boolean,
 	is_next boolean,
 	is_current boolean,
-	fpl_id integer,
+	gw_number integer,
     season integer,
 	FOREIGN KEY (season)
         REFERENCES seasons (id)

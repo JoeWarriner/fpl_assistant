@@ -43,4 +43,4 @@ OTHER
 - [ ] Store data more robustly.
 - [ ] Add pipeline for live data.
 - [ ] More sophisticated measures of player value
-- [ ] Deploy to cloud platform.
+- [ ] Deploy to cloud platform.  
