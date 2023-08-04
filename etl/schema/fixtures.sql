@@ -3,6 +3,8 @@ CREATE TABLE fixtures (
 	gameweek integer,
 	away_team integer,
 	home_team integer,
+	away_team_difficulty integer,
+	home_team_difficulty integer,
 	season integer,
 	FOREIGN KEY (gameweek)
 		REFERENCES gameweeks (id),

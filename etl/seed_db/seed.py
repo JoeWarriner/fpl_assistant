@@ -176,7 +176,7 @@ def extract_fixtures(engine: sqlalchemy.Engine):
     gameweek_query = f'SELECT id as gameweek, season, gw_number FROM gameweeks;'
     gameweeks = pd.DataFrame(engine.connect().execute(sqlalchemy.text(gameweek_query)).all())
 
-    fixtures_columns = ['event', 'finished', 'started', 'team_a', 'team_h', 'kickoff_time', 'id', 'team_a_score', 'team_h_score']
+    fixtures_columns = ['event', 'finished', 'started', 'team_a', 'team_h', 'kickoff_time', 'id', 'team_a_score', 'team_h_score', 'team_a_difficulty', 'team_h_difficulty']
     fixtures_data = get_data_for_all_seasons(engine, Path('fixtures.csv'), columns = fixtures_columns
                         )
     
@@ -211,6 +211,8 @@ def extract_fixtures(engine: sqlalchemy.Engine):
                     columns = {
                         'team_a_score': 'away_team_score', 
                         'team_h_score': 'home_team_score', 
+                        'team_a_difficulty': 'away_team_difficulty',
+                        'team_h_difficulty': 'home_team_difficulty',
                         'id': 'fpl_id'
                 }).to_sql('fixtures', if_exists='append', con=engine, index=False)
 
@@ -281,7 +283,7 @@ def extract_player_fixtures(engine: sqlalchemy.Engine):
 
 def validate(engine):
 
-    
+
     validation_query = '''
         SELECT 
             teams.short_name as team,
