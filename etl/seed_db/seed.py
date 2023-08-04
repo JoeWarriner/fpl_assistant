@@ -279,6 +279,41 @@ def extract_player_fixtures(engine: sqlalchemy.Engine):
                             ).to_sql('player_fixtures', con=engine, index=False, if_exists='append')
 
 
+def validate(engine):
+
+    
+    validation_query = '''
+        SELECT 
+            teams.short_name as team,
+            positions.short_name as position
+        FROM
+            players 
+            INNER JOIN player_fixtures on  players.id = player_fixtures.player
+            INNER JOIN teams on player_fixtures.team = teams.id
+            INNER JOIN player_seasons on players.id = player_seasons.player
+            INNER JOIN positions on player_seasons.position = positions.id
+            INNER JOIN fixtures on player_fixtures.fixture = fixtures.id
+            INNER JOIN seasons on fixtures.season = seasons.id
+        WHERE
+            players.second_name = 'Salah'
+            AND seasons.start_year > 2018
+        ;
+
+    '''
+    validation_table = pd.DataFrame(engine.connect().execute(sqlalchemy.text(validation_query)).all())
+
+
+    for column, expected_value in (('team', 'LIV') , ('position', 'MID')):
+        try:
+            assert validation_table[column].eq(expected_value).all()
+        except AssertionError as e:
+            print(validation_table.groupby(column).count())
+        
+    
+    
+
+
+
 
                 
 
@@ -294,4 +329,5 @@ def run():
     extract_gameweeks(engine)
     extract_fixtures(engine)
     extract_player_fixtures(engine)
+    validate(engine)
 
