@@ -72,6 +72,7 @@ def extract_players(engine):
                     ).rename(columns = {'code':'fpl_id'}
                     ).to_sql('players', if_exists= 'append', con=engine, index=False)
 
+    
 
 def extract_teams(engine):
 
@@ -127,6 +128,24 @@ def extract_positions(engine: sqlalchemy.Engine):
             )[['id','singular_name', 'singular_name_short']
             ].rename(columns= {'id': 'fpl_id', 'singular_name': 'pos_name', 'singular_name_short': 'short_name'}
             ).to_sql('positions', if_exists='append', con=engine, index=False)
+
+
+def extract_player_seasons(engine):
+    positions_query = f'SELECT id as position, fpl_id as position_fpl_id FROM positions;'
+    positions = pd.DataFrame(engine.connect().execute(sqlalchemy.text(positions_query)))
+
+    player_query = F'SELECT id as player, fpl_id as player_fpl_id FROM players;'
+    players = pd.DataFrame(engine.connect().execute(sqlalchemy.text(player_query)))
+
+
+    
+    player_data = get_data_for_all_seasons(engine, Path('players_raw.csv'), columns =['code', 'id', 'element_type']
+                    ).merge(positions, how='left', left_on=['element_type'], right_on=['position_fpl_id']
+                    ).drop(columns=['element_type', 'position_fpl_id']
+                    ).merge(players, how = 'left', left_on=['code'], right_on=['player_fpl_id']
+                    ).drop(columns=['code', 'player_fpl_id']
+                    ).rename(columns={'id':'fpl_id'}
+                    ).to_sql('player_seasons', if_exists='append', con=engine, index=False)
 
 
 def extract_gameweeks(engine: sqlalchemy.Engine):
@@ -199,16 +218,65 @@ def extract_fixtures(engine: sqlalchemy.Engine):
 def extract_player_fixtures(engine: sqlalchemy.Engine):
     ## IN PROGRESS
     
-    fixtures_query = 'SELECT id as fixture_id, season, fpl_id from fixtures;'
+    fixtures_query = 'SELECT id as fixture, season, fpl_id as fpl_fixture_id, away_team, home_team from fixtures;'
     fixtures = pd.DataFrame(engine.connect().execute(sqlalchemy.text(fixtures_query)).all())
 
-    fixtures_data = get_data_for_all_seasons(engine, Path('gws', 'merged_gw.csv'))
-    fixtures_data = fixtures_data.merge(fixtures,
-                            left_on = ['fixture', 'season'],
-                            right_on = ['fpl_id', 'season']
-                        )
+    players_query = 'SELECT player, season, fpl_id as fpl_player_season_id from player_seasons;'
+    players = pd.DataFrame(engine.connect().execute(sqlalchemy.text(players_query)).all())
+
+    player_fixtures_columns = [
+        'element',
+        'fixture',
+        'value',
+        'minutes',
+        'penalties_missed',
+        'penalties_saved',
+        'red_cards',
+        'yellow_cards',
+        'selected',
+        'total_points',
+        'goals_scored',
+        'goals_conceded',
+        'clean_sheets',
+        'bonus',
+        'assists',
+        'was_home'
+    ]
+
+
+    player_fixtures_data  = get_data_for_all_seasons(engine, Path('gws', 'merged_gw.csv'), columns=player_fixtures_columns
+                            ).rename(columns= {
+                                'fixture': 'fixture_id', 
+                                'value': 'player_value',
+                                'minutes': 'minutes_played',
+                                'clean_sheets': 'clean_sheet'
+                            })
+
+    home_fixtures = player_fixtures_data[
+                            player_fixtures_data['was_home'] == True
+                        ].merge(
+                            fixtures,
+                            left_on = ['fixture_id', 'season'],
+                            right_on = ['fpl_fixture_id', 'season'],
+                        ).drop(columns = ['fixture_id','fpl_fixture_id']
+                        ).rename(columns={'away_team': 'opposition', 'home_team': 'team'})
     
-    print(fixtures_data)
+    away_fixtures = player_fixtures_data[
+                            player_fixtures_data['was_home'] == False
+                        ].merge(
+                            fixtures,
+                            left_on = ['fixture_id', 'season'],
+                            right_on = ['fpl_fixture_id', 'season'],
+                        ).drop(columns = ['fixture_id','fpl_fixture_id']
+                        ).rename(columns={'away_team': 'team', 'home_team': 'opposition'})            
+    
+    pd.concat([home_fixtures, away_fixtures]
+                            ).merge(players,
+                                left_on= ['element', 'season'],
+                                right_on= ['fpl_player_season_id', 'season']
+                            ).astype({'clean_sheet': 'boolean'}
+                            ).drop(columns=['element', 'fpl_player_season_id', 'season']
+                            ).to_sql('player_fixtures', con=engine, index=False, if_exists='append')
 
 
 
@@ -222,6 +290,7 @@ def run():
     extract_teams(engine)
     extract_team_seasons(engine)
     extract_positions(engine)
+    extract_player_seasons(engine)
     extract_gameweeks(engine)
     extract_fixtures(engine)
     extract_player_fixtures(engine)

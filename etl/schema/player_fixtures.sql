@@ -3,7 +3,8 @@ CREATE TABLE player_fixtures (
     fixture integer,
     player integer,
     team integer,
-	current_value integer,
+	opposition integer,
+	player_value integer,
 	minutes_played integer,
 	penalties_missed integer,
 	penalties_saved integer,
@@ -16,6 +17,7 @@ CREATE TABLE player_fixtures (
 	clean_sheet boolean,
 	bonus integer,
 	assists integer,
+	was_home boolean,
     FOREIGN KEY (fixture)
         REFERENCES fixtures (id),
     FOREIGN KEY (player)
