@@ -32,7 +32,7 @@ training_series_query = series_query + '''WHERE seasons.start_year < 2022 '''
 test_series_query = series_query + '''WHERE seasons.start_year = 2022 and gameweeks.gw_number <= 10'''
 
 
-def query(query_str: str):
+def query(query_str: str):  
     data = pd.DataFrame(engine.connect().execute(sqlalchemy.text(query_str)).all())
     return data
 
@@ -191,6 +191,48 @@ if __name__ == '__main__':
         print(f'Accuracy for top 100 performers {col} : {compute_mae(result_with_values_top_100["actual_points"], result_with_values_top_100[col] )}')
 
     print(result_with_values_top_100)
+
+
+    ## RANDOM FOREST IDEAS
+
+    ## Recent form, last 5 fixtures (played): points, goals, assists, clean sheets. Expected all of the above.
+    ## Recent form, last 10 fixtures (played): 
+    ## PL quality
+    ## Quality at current team.
+    ## Total points in previous season (games played)
+    
+    ## Typical play against team like this
+
+    ## Career play percentage
+    ## Play percentage last 10 fixtures.
+    ## Play percentage at current team
+    ## Play percentage vs opposition team type
+
+    
+
+    ## Opposition team ranking
+    ## Own team ranking
+    ## Team differential
+
+    ## FPL position
+    ## Actual position      
+
+
+
+    
+
+    ## Team average goals per game. 
+    
+
+    ## Opposition quality.
+    ## Opposition points given up to similar players.
+
+         
+
+
+    ## Form at current team.
+    ## Length of time at current team.
+    ## Players in same position at current team
 
 
 

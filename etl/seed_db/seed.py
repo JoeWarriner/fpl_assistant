@@ -32,8 +32,7 @@ def extract_seasons(engine: sqlalchemy.Engine):
             [False, 2019, '2019-20'],
             [False, 2020, '2020-21'],
             [False, 2021, '2021-22'],
-            [False, 2022, '2022-23'],            
-            [True, 2023, '2023-24']            
+            [True, 2022, '2022-23']
         ]
     )
 
@@ -41,7 +40,7 @@ def extract_seasons(engine: sqlalchemy.Engine):
     seasons.to_sql('seasons', if_exists= 'append', con=engine, index=False)
 
 def get_data_for_all_seasons(engine: sqlalchemy.Engine, filename: Union[Path, str], columns = None, include_seasons_col = True) -> pd.DataFrame:
-    season_query = f'SELECT id, season FROM seasons WHERE is_current = false  ;'
+    season_query = f'SELECT id, season FROM seasons;'
     seasons = engine.connect().execute(sqlalchemy.text(season_query)).all()
 
     season_data_list = []
