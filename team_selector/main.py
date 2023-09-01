@@ -15,8 +15,7 @@ async def best_team():
     
     with open('data/current_best_team.json') as file:
         team = json.loads(file.read())
-
-
+        
     return team
 
 

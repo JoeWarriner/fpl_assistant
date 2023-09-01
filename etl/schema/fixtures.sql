@@ -1,3 +1,4 @@
+
 CREATE TABLE fixtures (
 	id serial PRIMARY KEY,
 	gameweek integer,
