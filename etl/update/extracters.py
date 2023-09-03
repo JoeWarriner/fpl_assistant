@@ -9,7 +9,7 @@ import pandas as pd
 class Extracter(ABC):
 
     @abstractmethod
-    def extract():
+    def extract() -> list[Any]:
         ...
 
 class APIExtracter(Extracter):
@@ -18,7 +18,7 @@ class APIExtracter(Extracter):
         self.api_model_class = api_model_class
         self.api_data = api_data
 
-    def extract(self):
+    def extract(self) -> list[Any]:
         return [self.api_model_class.model_validate(data) for data in self.api_data]
 
 
@@ -29,7 +29,7 @@ class DataTableExtracter(Extracter):
         self.filename = filename
         self.pathlib = pathlib
     
-    def extract(self):
+    def extract(self) -> list[Any]:
         season_data_list = []
         for season in self.seasons:
             path = self.pathlib.get_season_data_directory(season) / self.filename

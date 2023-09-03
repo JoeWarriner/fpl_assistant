@@ -24,18 +24,19 @@ PRIOR_SEASONS_LABELS = [
 ]
 
 
-def extract_seasons():
-    seasons = pd.DataFrame(
-        columns = ['is_current', 'start_year', 'season'],
-        data = [
-            [False, 2018, '2018-19'],
-            [False, 2019, '2019-20'],
-            [False, 2020, '2020-21'],
-            [False, 2021, '2021-22'],
-            [True, 2022, '2022-23']
-        ]
-    )
-    seasons.to_sql('seasons', if_exists= 'append', con= dal.engine, index=False)
+class CreateSeasons:
+    def run(self):
+        seasons = pd.DataFrame(
+            columns = ['is_current', 'start_year', 'season'],
+            data = [
+                [False, 2018, '2018-19'],
+                [False, 2019, '2019-20'],
+                [False, 2020, '2020-21'],
+                [False, 2021, '2021-22'],
+                [True, 2022, '2022-23']
+            ]
+        )
+        seasons.to_sql('seasons', if_exists= 'append', con= dal.engine, index=False)
 
 
 def get_data_for_all_seasons(filename: Union[Path, str], columns = None, include_seasons_col = True) -> pd.DataFrame:
@@ -58,7 +59,7 @@ def get_data_for_all_seasons(filename: Union[Path, str], columns = None, include
     return all_season_data
 
 
-    
+     
 
 def extract_players(): 
     player_data = get_data_for_all_seasons(
@@ -95,10 +96,7 @@ def extract_teams():
         ]
     )
     
-    pd.concat([team_data, missing_teams]
-        ).drop_duplicates(subset=['code']
-        ).rename(columns= {'code' : 'fpl_id', 'name': 'team_name'}
-        ).to_sql('teams', if_exists='append', con = dal.engine, index = False)
+    
 
 
 def extract_team_seasons():
@@ -308,14 +306,8 @@ def validate():
             print(validation_table.groupby(column).count())
         
     
-    
-
-
-
-
         
 def run():    
-
     extract_seasons()
     # extract_players()
     # extract_teams()

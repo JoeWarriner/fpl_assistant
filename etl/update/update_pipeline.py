@@ -49,8 +49,8 @@ class DataImportPipeline(Task):
     def run(self):
 
         data = self.extracter.extract()
-        if self.transformer:
-            transformed_data = [self.transformer.convert(item) for item in data]
+        
+        transformed_data = self.transformer.convert(data) 
         for data in transformed_data:
             self.loader.load(data)
 
@@ -79,13 +79,17 @@ class DAGTopologicalSerializer:
             source_node = nodes_without_incoming_edges.pop()
             sorted_nodes.append(source_node)
 
+            nodes_to_update = []
             for node in nodes_with_incoming_edges:
                 incoming_node_list = self.graph.get(node)
                 if source_node in incoming_node_list:
                     incoming_node_list.remove(source_node)
                     if not incoming_node_list:
-                        nodes_with_incoming_edges.remove(node)
-                        nodes_without_incoming_edges.add(node)
+                        nodes_to_update.append(node)
+                    
+            for node in nodes_to_update:
+                nodes_with_incoming_edges.remove(node)
+                nodes_without_incoming_edges.add(node)
             
         return sorted_nodes
     

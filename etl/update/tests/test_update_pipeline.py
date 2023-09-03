@@ -24,8 +24,8 @@ def test_player_import(database):
     orchestrator = PipelineOrchestrator()
     test_add_player = DataImportPipeline(
         extracter= extracters.APIExtracter(api.Player, test_data.MO_SALAH),
-        transformer= adapters.PlayerAdapter(),
-        loader = loaders.DictionaryDBLoader(db.Player)
+        transformer= adapters.APITranformer(adapter=adapters.PlayerAdapter),
+        loader = loaders.DBLoader(db.Player)
     )
     orchestrator.add_task(test_add_player)
     orchestrator.run()
@@ -43,8 +43,8 @@ def test_team_import(database):
     orchestrator = PipelineOrchestrator()
     test_add_team = DataImportPipeline(
         extracter= extracters.APIExtracter(api.Team, test_data.ARSENAL),
-        transformer= adapters.TeamAdapter(),
-        loader = loaders.DictionaryDBLoader(db.Team)
+        transformer= adapters.APITranformer(adapter=adapters.TeamAdapter),
+        loader = loaders.DBLoader(db.Team)
     )
     orchestrator.add_task(test_add_team)
     orchestrator.run()

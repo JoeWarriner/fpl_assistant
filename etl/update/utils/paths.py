@@ -17,12 +17,12 @@ class ProjectPaths:
     @classmethod
     @property
     def api_data_directory(cls) -> Path:
-        cls.files_directory.joinpath('api_data')
+        return cls.files_directory.joinpath('api_data')
     
     @classmethod
     @property
     def table_data_directory(cls) -> Path:
-        cls.files_directory.joinpath('data_tables')
+        return cls.files_directory.joinpath('data_tables')
 
     @classmethod
     def get_data_path_for_date(cls, date: date) -> Path:
@@ -56,7 +56,7 @@ class ProjectPaths:
     
     @classmethod
     def get_season_data_directory(cls, season: str) -> list[Path]:
-        cls.table_data_directory.joinpath(season)
+        return cls.table_data_directory.joinpath(season)
         
         
 if __name__ == '__main__':

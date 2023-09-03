@@ -1,3 +1,4 @@
+from __future__ import annotations
 from sqlalchemy.dialects.postgresql import insert
 from typing import Any, Optional
 from abc import ABC, abstractmethod
@@ -30,12 +31,23 @@ def get_player_id(player_fpl_season_id: int):
                 )    
 
 def get_team(team_fpl_season_id: int):
-    return session.scalar(
+    return dal.session.scalar(
             select(db.Team.id
                 ).join(db.Team.team_seasons).join(db.TeamSeason.season
                     ).where(db.TeamSeason.fpl_id == team_fpl_season_id and db.Season.is_current == True)
         )
     
+class APITranformer:
+    def __init__(self, adapter: type[Adapter]):
+        self.adapter = adapter
+    
+    def convert(self, input_list):
+        adapter = self.adapter()
+        output = [adapter.convert(input) for input in input_list]
+        return output
+
+
+
 
 class Adapter:
     input: object
@@ -47,13 +59,16 @@ class Adapter:
  
     def transform(self):
         ...
+    
+    @property
+    def db_columns(self):
+        return [col.key for col in self.table.__table__.columns if col.key != 'id']
 
     def convert(self, input) -> dict[str, Any]:
         self.input = input
         self.transform()
-        db_columns = [col.key for col in self.table.__table__.columns if col.key != 'id']
         output = {}
-        for col in db_columns:
+        for col in self.db_columns:
             if self.__dict__.get(col):
                 output[col] = self.__dict__.get(col)
             elif self.input.__dict__.get(col):
