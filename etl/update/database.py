@@ -172,29 +172,29 @@ TEST_DB = 'postgresql+psycopg2://postgres@localhost/fftest'
 
 
 
-class GenericDataAccessLayer:
+# class GenericDataAccessLayer:
 
-    def __init__(self, connection: str):
-        self.connection = connection
+#     def __init__(self, connection: str):
+#         self.connection = connection
 
-    def __enter__(self) -> Session:
-        self.engine = create_engine(TEST_DB)
-        Base.metadata.create_all(self.engine)
-        self.session = sessionmaker(bind = self.engine)()
+#     def __enter__(self) -> Session:
+#         self.engine = create_engine(TEST_DB)
+#         Base.metadata.create_all(self.engine)
+#         self.session = sessionmaker(bind = self.engine)()
 
-    def __exit__(self, *args): 
-        pass
+#     def __exit__(self, *args): 
+#         pass
 
-class FFADataAccessLayer(GenericDataAccessLayer):
-    def __init__(self):
-        self.connection = 'postgresql+psycopg2://postgres@localhost/fantasyfootballassistant'
+# class FFADataAccessLayer(GenericDataAccessLayer):
+#     def __init__(self):
+#         self.connection = 'postgresql+psycopg2://postgres@localhost/fantasyfootballassistant'
 
-class TestDataAccessLayer(GenericDataAccessLayer):
-    def __init__(self):
-        self.connection = 'postgresql+psycopg2://postgres@localhost/fftest'
+# class TestDataAccessLayer(GenericDataAccessLayer):
+#     def __init__(self):
+#         self.connection = 'postgresql+psycopg2://postgres@localhost/fftest'
     
-    def __exit__(self, *args):
-        Base.metadata.drop_all(self.engine)
+#     def __exit__(self, *args):
+#         Base.metadata.drop_all(self.engine)
 
 
 class DataAccessLayer:
@@ -208,6 +208,10 @@ class DataAccessLayer:
         self.engine = create_engine(self.conn_string)
         Base.metadata.create_all(self.engine)
         self.Session = sessionmaker(bind=self.engine)
+    
+    def drop_tables(self):
+        Base.metadata.drop_all(self.engine)
+
 
 
 dal = DataAccessLayer() 

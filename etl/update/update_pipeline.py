@@ -49,11 +49,12 @@ class DataImportPipeline(Task):
     def run(self):
 
         data = self.extracter.extract()
-        
-        transformed_data = [self.transformer.convert(item) for item in data]
+        if self.transformer:
+            transformed_data = [self.transformer.convert(item) for item in data]
         for data in transformed_data:
             self.loader.load(data)
 
+ 
 
 
 class PipelineTaskSerializer(Protocol):
@@ -128,7 +129,7 @@ if __name__ == "__main__":
         gw_import = DataImportPipeline(
             extracter = extract.APIExtracter(api.GameWeek, ProjectFiles.gameweeks_json), 
             transformer = tform.GameWeekAdapter(session),
-            loader = load.DBLoader(Gameweek, session)
+            loader = load.DictionaryDBLoader(Gameweek, session)
         )
 
         # fixture_import = DataImportPipeline(

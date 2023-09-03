@@ -5,16 +5,30 @@ class ProjectPaths:
 
     @classmethod
     @property
-    def raw_api_data_dir(cls) -> Path:
-        path = Path(__file__).parents[2].joinpath('files', 'api_data')
-        return path
+    def project_directory(cls) -> Path:
+        return Path(__file__).parents[3]
+    
+    @classmethod
+    @property
+    def files_directory(cls) -> Path:
+        return cls.project_directory.joinpath('files')
+    
+
+    @classmethod
+    @property
+    def api_data_directory(cls) -> Path:
+        cls.files_directory.joinpath('api_data')
+    
+    @classmethod
+    @property
+    def table_data_directory(cls) -> Path:
+        cls.files_directory.joinpath('data_tables')
 
     @classmethod
     def get_data_path_for_date(cls, date: date) -> Path:
-        path = cls.raw_api_data_dir.joinpath(str(date))
+        path = cls.api_data_directory.joinpath(str(date))
         return path
         
-
     @classmethod
     @property
     def latest_daily_data_dir(cls) -> Path:
@@ -40,7 +54,10 @@ class ProjectPaths:
     def get_latest_player_data_path(cls, fpl_id: int , name: str):
         return cls.latest_player_data_dir.joinpath(f'{fpl_id}_{name}.json')
     
-
-
+    @classmethod
+    def get_season_data_directory(cls, season: str) -> list[Path]:
+        cls.table_data_directory.joinpath(season)
+        
+        
 if __name__ == '__main__':
     print(ProjectPaths.get_latest_player_data_path(500))

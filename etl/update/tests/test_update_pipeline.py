@@ -5,7 +5,7 @@ import etl.update.api as api
 import etl.update.extracters as extracters
 import etl.update.adapters as adapters
 import etl.update.loaders as loaders
-import etl.update.tests.test_data_dicts as test_data
+import etl.update.tests.test_data.test_api_dicts as test_data
 from sqlalchemy import select
 
 
@@ -25,7 +25,7 @@ def test_player_import(database):
     test_add_player = DataImportPipeline(
         extracter= extracters.APIExtracter(api.Player, test_data.MO_SALAH),
         transformer= adapters.PlayerAdapter(),
-        loader = loaders.DBLoader(db.Player)
+        loader = loaders.DictionaryDBLoader(db.Player)
     )
     orchestrator.add_task(test_add_player)
     orchestrator.run()
@@ -44,7 +44,7 @@ def test_team_import(database):
     test_add_team = DataImportPipeline(
         extracter= extracters.APIExtracter(api.Team, test_data.ARSENAL),
         transformer= adapters.TeamAdapter(),
-        loader = loaders.DBLoader(db.Team)
+        loader = loaders.DictionaryDBLoader(db.Team)
     )
     orchestrator.add_task(test_add_team)
     orchestrator.run()
@@ -53,7 +53,9 @@ def test_team_import(database):
     assert team.team_name == 'Arsenal'
     assert team.short_name == 'ARS'
     assert team.fpl_id == 3
-    
+
+
+
 
 
 
