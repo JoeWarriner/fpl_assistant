@@ -28,6 +28,11 @@ class ProjectFiles:
     def gameweeks_json(cls):
         all_data = cls.summary_api_json()
         return all_data['events']
+    
+    @classmethod
+    def fixtures_json(cls):
+        with open(cls.pathlib.latest_fixture_data) as file:
+            return json.loads(file.read())
 
     @classmethod
     def get_player_detail_json(cls, fpl_id: int, name: str):

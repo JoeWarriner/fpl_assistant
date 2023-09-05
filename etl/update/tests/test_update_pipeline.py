@@ -10,6 +10,65 @@ from etl.update.tests.utils import ProjectFilesForTests
 from sqlalchemy import select, insert
 
 
+players = DataImportPipeline(
+        extracter= extracters.APIExtracter(api.Player, ProjectFilesForTests.player_overview_json),
+        transformer= adapters.APITranformer(adapter=adapters.PlayerAdapter),
+        loader = loaders.DBLoader(db.Player)
+)
+
+teams = DataImportPipeline(
+        extracter= extracters.APIExtracter(api.Team, ProjectFilesForTests.teams_json),
+        transformer= adapters.APITranformer(adapter=adapters.TeamAdapter),
+        loader = loaders.DBLoader(db.Team)
+)
+
+
+positions = DataImportPipeline(
+        extracter= extracters.APIExtracter(api.Position, ProjectFilesForTests.positions_json),
+        transformer= adapters.APITranformer(adapter=adapters.PositionAdapter),
+        loader = loaders.DBLoader(db.Position)
+)
+
+player_seasons = DataImportPipeline(
+        extracter= extracters.APIExtracter(api.Player, ProjectFilesForTests.player_overview_json),
+        transformer= adapters.APITranformer(adapter=adapters.PlayerSeason),
+        loader = loaders.DBLoader(db.PlayerSeason)
+)
+
+team_seasons = DataImportPipeline(
+        extracter= extracters.APIExtracter(api.Team, ProjectFilesForTests.teams_json),
+        transformer= adapters.APITranformer(adapter=adapters.TeamSeasonAdapter),
+        loader = loaders.DBLoader(db.TeamSeason)
+)
+
+
+gameweeks = DataImportPipeline(
+        extracter= extracters.APIExtracter(api.GameWeek, ProjectFilesForTests.gameweeks_json),
+        transformer= adapters.APITranformer(adapter=adapters.GameWeekAdapter),
+        loader = loaders.DBLoader(db.Gameweek)
+)
+
+fixtures = DataImportPipeline(
+        extracter= extracters.APIExtracter(api.Fixture, ProjectFilesForTests.fixtures_json),
+        transformer= adapters.APITranformer(adapter=adapters.TeamSeasonAdapter),
+        loader = loaders.DBLoader(db.TeamSeason)
+)
+
+player_fixtures = DataImportPipeline(
+        extracter= extracters.APIExtracter(api.PlayerFixture, ProjectFilesForTests.get_player_detail_json),
+        transformer= adapters.APITranformer(adapter=adapters.PlayerFixtureAdapter),
+        loader = loaders.DBLoader(db.PlayerFixture)
+)
+
+
+player_performances = DataImportPipeline(
+        extracter= extracters.APIExtracter(api.PlayerPerformance, ProjectFilesForTests.get_player_detail_json),
+        transformer= adapters.APITranformer(adapter=adapters.PlayerPerformanceAdapter),
+        loader = loaders.DBLoader(db.PlayerPerformance)
+)
+
+
+
 @pytest.fixture
 def database():
     db.dal.conn_string = 'postgresql+psycopg2://postgres@localhost/fftest'
@@ -18,12 +77,6 @@ def database():
     yield
     db.dal.session.rollback()
     db.dal.session.close()
-
-players = DataImportPipeline(
-        extracter= extracters.APIExtracter(api.Player, ProjectFilesForTests.player_overview_json),
-        transformer= adapters.APITranformer(adapter=adapters.PlayerAdapter),
-        loader = loaders.DBLoader(db.Player)
-)
 
 
 
@@ -61,6 +114,8 @@ def test_player_import(import_players):
     alvarez, = db.dal.session.execute(select(db.Player).where(db.Player.second_name == 'Álvarez')).one()
     assert alvarez.first_name == 'Julián'
     assert alvarez.fpl_id == 461358
+
+
 
 
 
