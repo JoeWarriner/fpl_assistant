@@ -2,10 +2,11 @@ from etl.update.utils.paths import ProjectPaths
 import json
 
 class ProjectFiles:
+    pathlib = ProjectPaths
 
     @classmethod
     def summary_api_json(cls):
-        with open(ProjectPaths.latest_main_data) as file:
+        with open(cls.pathlib.latest_main_data) as file:
             all_data = json.loads(file.read())
         return all_data
 
@@ -30,6 +31,6 @@ class ProjectFiles:
 
     @classmethod
     def get_player_detail_json(cls, fpl_id: int, name: str):
-        with open(ProjectPaths.get_latest_player_data_path(fpl_id, name)) as file:
+        with open(cls.pathlib.get_latest_player_data_path(fpl_id, name)) as file:
             player_data = json.loads(file.read())
         return player_data
