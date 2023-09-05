@@ -123,11 +123,11 @@ api_download = APIDownloader()
 def seasons_import(database):
     orchestrator = PipelineOrchestrator()
     orchestrator.add_task(seasons)
-    orchestrator.run()
     return orchestrator
 
 
 def test_seasons_import(seasons_import):
+    seasons_import.run()
     test_season = db.dal.session.scalar(select(db.Season).where(db.Season.start_year == 2022))
     assert test_season.season == '2022-23'
     all_seasons = db.dal.session.execute(select(db.Season)).all()
@@ -138,10 +138,10 @@ def test_seasons_import(seasons_import):
 def players_import(seasons_import: PipelineOrchestrator):
     orchestrator = seasons_import
     orchestrator.add_task(players, predecessors={seasons})
-    orchestrator.run()
     return orchestrator
 
 def test_players_import(players_import):
+    players_import.run()
     test_player = db.dal.session.scalar(select(db.Player).where(db.Player.first_name == 'Trent'))
     assert test_player.second_name == 'Alexander-Arnold'
     assert test_player.fpl_id == 169187
@@ -153,10 +153,10 @@ def test_players_import(players_import):
 def teams_import(players_import: PipelineOrchestrator):
     orchestrator = players_import
     orchestrator.add_task(teams, predecessors={seasons})
-    orchestrator.run()
     return orchestrator
 
 def test_teams_import(teams_import):
+    teams_import.run()
     test_team = db.dal.session.scalar(select(db.Team).where(db.Team.short_name == 'LIV'))
     assert test_team.team_name == 'Liverpool'
     assert test_team.fpl_id == 14
@@ -167,10 +167,10 @@ def test_teams_import(teams_import):
 def team_seasons_import(teams_import:PipelineOrchestrator):
     orchestrator = teams_import
     orchestrator.add_task(team_seasons, predecessors={teams})
-    orchestrator.run()
     return orchestrator
 
 def test_team_seasons_import(team_seasons_import):
+    team_seasons_import.run()
     test_team_season = db.dal.session.scalar(select(db.TeamSeason).join(db.TeamSeason.team).join(db.TeamSeason.season).where(db.Team.short_name == 'LIV' and db.Season.start_year == 2022))
     assert test_team_season.fpl_id == 12
 
@@ -180,10 +180,10 @@ def positions_import(team_seasons_import: PipelineOrchestrator):
     orchestrator = team_seasons_import
     orchestrator.add_task(api_download)
     orchestrator.add_task(positions, predecessors={api_download})
-    orchestrator.run()
     return orchestrator
     
 def test_positions_import(positions_import):
+    positions_import.run()
     test_position = db.dal.session.scalar(select(db.Position).where(db.Position.short_name == 'DEF'))
     assert test_position.pos_name == 'Defender'
 
@@ -192,34 +192,34 @@ def test_positions_import(positions_import):
 def player_seasons_import(positions_import: PipelineOrchestrator):
     orchestrator = positions_import
     orchestrator.add_task(player_seasons, predecessors={players, seasons, positions})
-    orchestrator.run()
     return orchestrator
 
 def test_player_seasons_import(player_seasons_import):
+    player_seasons_import.run()
     test_ps = db.dal.session.scalar(select(db.PlayerSeason).join(db.Season).join(db.Player).where(db.Player.first_name == 'Trent' and  db.Season.start_year == 2022))
     assert test_ps.fpl_id == 285
 
 
 @pytest.fixture
-def gamweeks_import(player_seasons_import: PipelineOrchestrator):
+def gameweeks_import(player_seasons_import: PipelineOrchestrator):
     orchestrator = player_seasons_import
     orchestrator.add_task(gameweeks, predecessors={seasons})
-    orchestrator.run()
     return orchestrator
 
-def test_gameweeks_import(gamweeks_import):
+def test_gameweeks_import(gameweeks_import):
+    gameweeks_import.run()
     test_gw = db.dal.session.scalar(select(db.Gameweek).join(db.Season).where(db.Gameweek.gw_number == 1 and db.Season.start_year == 2022))
     assert test_gw
 
 
 @pytest.fixture
-def fixtures_import(gamweeks_import: PipelineOrchestrator):
-    orchestrator = gamweeks_import
+def fixtures_import(gameweeks_import: PipelineOrchestrator):
+    orchestrator = gameweeks_import
     orchestrator.add_task(fixtures, predecessors={gameweeks, seasons})
-    orchestrator.run()
     return orchestrator
 
 def test_fixtures_import(fixtures_import):
+    fixtures_import.run()
     test_fixture_home  = db.dal.session.scalar(
         select(
             db.Fixture
@@ -255,7 +255,6 @@ def test_fixtures_import(fixtures_import):
 def player_performances_import(fixtures_import: PipelineOrchestrator):
     orchestrator = fixtures_import
     orchestrator.add_task(player_performances, predecessors={fixtures, player_seasons})
-    orchestrator.run()
     return orchestrator
 
 
@@ -282,6 +281,7 @@ def query_player_performance(gameweek, season, first_name):
 
 
 def test_player_performances_import(player_performances_import):
+    player_performances_import.run()
     performance_1 = query_player_performance(1, '2022-23', 'Trent')
     assert performance_1.short_name == 'ARS'
     assert performance_1.was_home == True

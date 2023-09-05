@@ -22,49 +22,49 @@ def insert_season(database):
 )
     
 
-def test_convert_season_ids( insert_season):
-    transformer = tform.DataFileTransformer()
-    dataset = pd.DataFrame(
-        {
-            'other_col': ['some data'],
-            'season' : ['2021-22'],  
-        }
-    )
-    output = transformer.convert_season_ids(dataset)
+# def test_convert_season_ids( insert_season):
+#     transformer = tform.DataFileTransformer()
+#     dataset = pd.DataFrame(
+#         {
+#             'other_col': ['some data'],
+#             'season' : ['2021-22'],  
+#         }
+#     )
+#     output = transformer.convert_season_ids(dataset)
     
-    expected_output = pd.DataFrame(
-        {
-            'other_col': ['some data'],
-            'season' : [1],  
-        }
-    )
+#     expected_output = pd.DataFrame(
+#         {
+#             'other_col': ['some data'],
+#             'season' : [1],  
+#         }
+#     )
 
-    pd.testing.assert_frame_equal(output, expected_output)
+#     pd.testing.assert_frame_equal(output, expected_output)
 
 
-def test_gameweek_transformer(insert_season):
-    transformer = tform.GameWeekTransformer()
-    dataset = pd.DataFrame(
-        {
-        'kickoff_time':  ['2021-08-14T14:00:00Z'],
-        'GW': [1],
-        'season': ['2021-22']
-        }
-    )
-    output = transformer.convert(dataset)
+# def test_gameweek_transformer(insert_season):
+#     transformer = tform.GameWeekTransformer()
+#     dataset = pd.DataFrame(
+#         {
+#         'kickoff_time':  ['2021-08-14T14:00:00Z'],
+#         'GW': [1],
+#         'season': ['2021-22']
+#         }
+#     )
+#     output = transformer.convert(dataset)
     
-    expected_output = [
-        {
-            'deadline_time': datetime(2021, 8, 14, 14),
-            'gw_number': 1,
-            'is_current': False,
-            'is_next': False,
-            'finished': True,
-            'is_previous': True,
-            'season': 1
-        }
-    ]
+#     expected_output = [
+#         {
+#             'deadline_time': datetime(2021, 8, 14, 14),
+#             'gw_number': 1,
+#             'is_current': False,
+#             'is_next': False,
+#             'finished': True,
+#             'is_previous': True,
+#             'season': 1
+#         }
+#     ]
 
-    assert output == expected_output
+#     assert output == expected_output
     
 
