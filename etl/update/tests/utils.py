@@ -1,6 +1,11 @@
 from etl.update.utils.paths import ProjectPaths
 
-class PathsForTests: 
+class PathsForTests(ProjectPaths): 
+    
     @classmethod
-    def get_season_data_directory(cls, season):
-        return ProjectPaths.project_directory.joinpath('etl', 'test_data', season)
+    @property
+    def files_directory(cls):
+        return cls.project_directory.joinpath('etl', 'test_files')
+    
+    
+    

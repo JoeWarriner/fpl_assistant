@@ -1,0 +1,22 @@
+{
+    "fixtures": [
+        {
+            "id": 50,
+            "code": 2367587,
+            "team_h": 20,
+            "team_h_score": null,
+            "team_a": 11,
+            "team_a_score": null,
+            "event": 5,
+            "finished": false,
+            "minutes": 0,
+            "provisional_start_time": false,
+            "kickoff_time": "2023-09-16T11:30:00Z",
+            "event_name": "Gameweek 5",
+            "is_home": false,
+            "difficulty": 2
+        }
+    ],
+    "history": [
+    ]
+}
