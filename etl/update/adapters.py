@@ -20,7 +20,7 @@ def get_fixture_id(fixture_fpl_id: int):
         return dal.session.scalar(
                 select(db.Fixture.id
                      ).join(db.Fixture.season
-                              ).where(db.Fixture.id == fixture_fpl_id and db.Season.is_current == True)
+                              ).where(db.Fixture.fpl_id == fixture_fpl_id).where(db.Season.is_current == True)
                         )
 
 def get_player_id(player_fpl_season_id: int):
@@ -162,15 +162,12 @@ class FixtureAdapter(Adapter):
 
 class PlayerFixtureAdapter(Adapter):
     input: api.PlayerFixture
-    table_ref = db.PlayerPerformance
+    table_ref = db.PlayerFixture
 
-    def __init__(self, input, player_fpl_season_id: int = None) -> None:
-        super().__init__(input)
-        self.player_fpl_season_id = player_fpl_season_id
 
     def transform(self):
         self.fixture_id = get_fixture_id(self.input.id)
-        self.player_id = get_player_id(self.player_fpl_season_id)
+        self.player_id = get_player_id(self.input.element)
         self.opposition_id = self.get_opposition()
         self.team_id = self.get_team_played_for()
     
@@ -182,7 +179,7 @@ class PlayerFixtureAdapter(Adapter):
             return get_team(self.input.team_a)
     
     def get_opposition(self):
-        if not self.input.is_home:
+        if self.input.is_home:
                 return get_team(self.input.team_a)
         else:
             return get_team(self.input.team_h)

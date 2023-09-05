@@ -1,5 +1,6 @@
 from etl.update.utils.paths import ProjectPaths
 import json
+import os
 
 class ProjectFiles:
     pathlib = ProjectPaths
@@ -39,3 +40,18 @@ class ProjectFiles:
         with open(cls.pathlib.get_latest_player_data_path(fpl_id, name)) as file:
             player_data = json.loads(file.read())
         return player_data
+    
+
+    @classmethod
+    def get_all_player_fixtures(cls):
+        all_player_fixtures = []
+        for fpl_id, path in cls.pathlib.get_all_player_data_paths():
+            with open(path) as file:
+                player_data = json.loads(file.read())
+                for fixture in player_data['fixtures']:
+                    fixture['element'] = fpl_id
+                    all_player_fixtures.append(fixture)
+        return all_player_fixtures
+
+
+                

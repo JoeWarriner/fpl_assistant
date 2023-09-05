@@ -57,7 +57,7 @@ fixtures = DataImportPipeline(
 )
 
 player_fixtures = DataImportPipeline(
-        extracter= extracters.APIExtracter(api.PlayerFixture, ProjectFilesForTests.get_player_detail_json),
+        extracter= extracters.APIExtracter(api.PlayerFixture, ProjectFilesForTests.get_all_player_fixtures),
         transformer= adapters.APITranformer(adapter=adapters.PlayerFixtureAdapter),
         loader = loaders.DBLoader(db.PlayerFixture)
 )
@@ -362,4 +362,49 @@ def test_fixture_import(import_fixtures):
     assert fixture_50.finished == False
     assert fixture_50.started == False
     
+    
+
+@pytest.fixture
+def import_player_fixtures(import_fixtures):
+    orchestrator = import_fixtures
+    orchestrator.add_task(player_fixtures, predecessors = {player_seasons, fixtures})
+    return orchestrator
+
+
+def player_fixture_test_query(season, second_name, opp):
+    opposition = aliased(db.Team, name='opposition')
+    fixture, = db.dal.session.execute(
+        select(
+            db.PlayerFixture
+        ).join(
+            db.Fixture, db.PlayerFixture.fixture_id == db.Fixture.id
+        ).join(
+            db.Season, db.Season.id == db.Fixture.season_id
+        ).join(
+            opposition, db.PlayerFixture.opposition_id == opposition.id
+        ).join(
+            db.Player, db.Player.id == db.PlayerFixture.player_id
+        ).where(
+            db.Season.season == season
+        ).where(
+            db.Player.second_name == second_name
+        ).where(
+            opposition.short_name == opp
+        )
+        ).one()
+    return fixture
+
+
+def test_player_fixture_import(import_player_fixtures):
+    import_player_fixtures.run()
+
+    player_fixtures = db.dal.session.scalars(select(
+        db.PlayerFixture)
+    ).all()
+    assert len(player_fixtures) == 2
+
+    fixture_1 = player_fixture_test_query(season='2023-24', second_name='Ramses Becker', opp='WOL')
+    assert fixture_1.is_home == False
+
+
     

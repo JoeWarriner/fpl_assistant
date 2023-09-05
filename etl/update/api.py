@@ -71,17 +71,15 @@ class PlayerFixture(BaseModel):
     id: int
     code: int
     team_h: int
-    team_h_score: int
     team_a: int
-    team_a_score: int
     event: int
     finished: bool
-    minutes: int
     provisional_start_time: bool
     kickoff_time: str
     event_name: str
     is_home: bool
     difficulty: int  
+    element: int #added in file handling
 
 class PlayerPerformance(BaseModel):
     element: int

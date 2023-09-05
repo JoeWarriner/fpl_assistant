@@ -1,5 +1,6 @@
 from pathlib import Path
 from datetime import date
+import os
 
 class ProjectPaths:
 
@@ -53,6 +54,14 @@ class ProjectPaths:
     @classmethod
     def get_latest_player_data_path(cls, fpl_id: int , name: str):
         return cls.latest_player_data_dir.joinpath(f'{fpl_id}_{name}.json')
+    
+    @classmethod
+    def get_all_player_data_paths(cls) -> tuple[int, Path]:
+        return {
+            (int(file.split('_')[0]), Path(cls.latest_player_data_dir, file))
+            for file in os.listdir(cls.latest_player_data_dir) 
+            if file.split('.')[-1] == 'json'
+        }
     
     @classmethod
     def get_season_data_directory(cls, season: str) -> list[Path]:
