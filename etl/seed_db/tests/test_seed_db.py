@@ -215,7 +215,7 @@ def test_gameweeks_import(gameweeks_import):
 @pytest.fixture
 def fixtures_import(gameweeks_import: PipelineOrchestrator):
     orchestrator = gameweeks_import
-    orchestrator.add_task(fixtures, predecessors={gameweeks, seasons})
+    orchestrator.add_task(fixtures, predecessors={gameweeks, seasons, team_seasons})
     return orchestrator
 
 def test_fixtures_import(fixtures_import):
