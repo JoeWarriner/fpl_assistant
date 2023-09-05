@@ -105,9 +105,11 @@ class PlayerSeason(Adapter):
 
     def transform(self):
         self.fpl_id = self.input.id
-        self.player_id = get_player_id(self.input.id)
+        self.player_id = dal.session.scalar(
+            select(db.Player.id).where(db.Player.fpl_id == self.input.code)
+        )
         self.season_id = get_season()
-        self.position_id = dal.session.execute(select(db.Position.id).where(db.Position.fpl_id == self.input.element_type))
+        self.position_id = dal.session.scalar(select(db.Position.id).where(db.Position.fpl_id == self.input.element_type))
         
 
 class TeamAdapter(Adapter):

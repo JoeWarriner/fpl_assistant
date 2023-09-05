@@ -54,6 +54,11 @@ class DataImportPipeline(Task):
             data = self.transformer.convert(data) 
         for record in data:
             self.loader.load(record)
+    
+    def __repr__(self) -> str:
+        return f'Import job for table: {self.loader.table}.'
+
+            
 
  
 

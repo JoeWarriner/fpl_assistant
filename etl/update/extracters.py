@@ -21,6 +21,8 @@ class APIExtracter(Extracter):
     def extract(self) -> list[Any]:
         return [self.api_model_class.model_validate(data) for data in self.api_data_getter()]
 
+    def __str__(self):
+        return f'API Extractor: {self.api_model_class}'
 
 
 class DataTableExtracter(Extracter):
@@ -41,3 +43,8 @@ class DataTableExtracter(Extracter):
                 print(f'No {self.filename} file found for season: {season}')
         all_season_data = pd.concat(season_data_list)
         return all_season_data
+    
+
+    def __str__(self): 
+        return f'DataTable Extractor: {self.filename}'
+    

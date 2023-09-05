@@ -145,12 +145,11 @@ class PlayerFixture(Base):
 class PlayerSeason(Base):
     __tablename__ = 'player_seasons'
     __table_args__ = (
-        UniqueConstraint('player_id', 'season_id', name = 'player_seasons__prevent_duplicate_import'),
+        UniqueConstraint('fpl_id', 'season_id', name = 'player_seasons__prevent_duplicate_import'),
     )
     
     id = Column(Integer, primary_key=True)
     fpl_id = Column(Integer)
-    new_col = Column(Integer)
     player_id = Column(Integer, ForeignKey('players.id'))
     season_id = Column(Integer, ForeignKey('seasons.id'))
     position_id = Column(Integer, ForeignKey('positions.id'))

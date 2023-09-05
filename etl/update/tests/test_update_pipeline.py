@@ -73,6 +73,7 @@ player_performances = DataImportPipeline(
 def database():
     db.dal.conn_string = 'postgresql+psycopg2://postgres@localhost/fftest'
     db.dal.connect()
+    db.dal.reset_tables()
     db.dal.session = db.dal.Session()
     yield
     db.dal.session.rollback()
@@ -181,7 +182,9 @@ def team_season_test_query(fpl_id, season):
         ).join(
             db.Season, db.Season.id == db.TeamSeason.season_id
         ).where(
-            db.TeamSeason.fpl_id == fpl_id , db.Season.season == season
+            db.TeamSeason.fpl_id == fpl_id
+        ).where(
+            db.Season.season == season
         )
     ).one()
     return output
@@ -201,8 +204,53 @@ def test_team_season_import(import_team_seasons):
 
 
 
+@pytest.fixture
+def import_player_seasons(import_team_seasons):
+    orchestrator = import_team_seasons
+    orchestrator.add_task(player_seasons, predecessors={players, team_seasons, positions})
+    return orchestrator
+
+def player_season_test_query(first_name, season):
+    second_name, short_name, fpl_id = db.dal.session.execute(
+        select(
+            db.Player.second_name, db.Position.short_name, db.PlayerSeason.fpl_id,
+        ).select_from(
+            db.PlayerSeason
+        ).join(
+            db.Season, db.Season.id == db.PlayerSeason.season_id
+        ).join(
+            db.Player, db.Player.id == db.PlayerSeason.player_id
+        ).join(
+            db.Position, db.Position.id == db.PlayerSeason.position_id
+        ).where(
+            db.Player.first_name == first_name
+        ).where(
+            db.Season.season == season
+        )
+        ).one()
+    return second_name, short_name, fpl_id
 
 
+
+def test_player_season_import(import_player_seasons):
+    import_player_seasons.run()
+
+    player_seasons = db.dal.session.scalars(select(
+        db.PlayerSeason)
+    ).all()
+    for player_season in player_seasons:
+        print(player_season.__dict__)
+    assert len(player_seasons) == 4
+
+    second_name, short_name, fpl_id = player_season_test_query('Alisson', '2023-24')
+    assert second_name == 'Ramses Becker'
+    assert short_name == 'GKP'
+    assert fpl_id == 291
+    
+    second_name, short_name, fpl_id = player_season_test_query('Julián', '2023-24')
+    assert second_name == 'Álvarez'
+    assert short_name == 'FWD'
+    assert fpl_id == 343
 
 
 

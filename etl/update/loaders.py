@@ -31,6 +31,7 @@ class DBLoader:
                 set_=data_dict
             )
         dal.session.execute(insert_stmt)
+        
 
         
         
