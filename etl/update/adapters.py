@@ -69,9 +69,9 @@ class Adapter:
         self.transform()
         output = {}
         for col in self.db_columns:
-            if self.__dict__.get(col):
+            if self.__dict__.get(col) is not None:
                 output[col] = self.__dict__.get(col)
-            elif self.input.__dict__.get(col):
+            elif self.input.__dict__.get(col) is not None:
                 output[col] = self.input.__dict__.get(col)
             else:
                 raise KeyError(

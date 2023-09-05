@@ -1,4 +1,5 @@
 import pytest
+from datetime import datetime
 import etl.update.database as db 
 from etl.update.update_pipeline import PipelineOrchestrator, DataImportPipeline
 import etl.update.api as api
@@ -255,3 +256,46 @@ def test_player_season_import(import_player_seasons):
 
 
 
+@pytest.fixture
+def import_gameweeks(import_player_seasons):
+    orchestrator = import_player_seasons
+    orchestrator.add_task(gameweeks)
+    return orchestrator
+
+def gamweek_test_query(gw_number, season):
+    gameweek, = db.dal.session.execute(
+        select(
+            db.Gameweek
+        ).join(
+            db.Season, db.Season.id == db.Gameweek.season_id
+        ).where(
+            db.Season.season == season
+        ).where(
+            db.Gameweek.gw_number == gw_number
+        )
+        ).one()
+    return gameweek
+
+
+def test_gameweek_import(import_gameweeks):
+    import_gameweeks.run()
+
+    gameweeks = db.dal.session.scalars(select(
+        db.Gameweek)
+    ).all()
+    assert len(gameweeks) == 2
+
+    gameweek_1 = gamweek_test_query(1, '2023-24')
+    assert gameweek_1.deadline_time == datetime(2023,8,11,18,30)
+    assert gameweek_1.finished == True
+    assert gameweek_1.is_previous == False
+    assert gameweek_1.is_current == False
+    assert gameweek_1.is_next == False
+    
+    gameweek_5 = gamweek_test_query(5, '2023-24')
+    assert gameweek_5.deadline_time == datetime(2023,9,16,11)
+    assert gameweek_5.finished == False
+    assert gameweek_5.is_previous == False
+    assert gameweek_5.is_current == False
+    assert gameweek_5.is_next == True
+    
