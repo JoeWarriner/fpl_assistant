@@ -4,28 +4,28 @@ import json
 class ProjectFiles:
 
     @classmethod
-    @property
     def summary_api_json(cls):
         with open(ProjectPaths.latest_main_data) as file:
             all_data = json.loads(file.read())
         return all_data
 
     @classmethod
-    @property
     def player_overview_json(cls):
-        all_data = cls.summary_api_json
+        all_data = cls.summary_api_json()
         return all_data['elements']
     
     @classmethod
-    @property
     def teams_json(cls):
-        all_data = cls.summary_api_json
+        all_data = cls.summary_api_json()
         return all_data['teams']
 
     @classmethod
-    @property
+    def positions_json(cls):
+        return cls.summary_api_json()['element_types']
+
+    @classmethod
     def gameweeks_json(cls):
-        all_data = cls.summary_api_json
+        all_data = cls.summary_api_json()
         return all_data['events']
 
     @classmethod

@@ -50,9 +50,10 @@ class DataImportPipeline(Task):
 
         data = self.extracter.extract()
         
-        transformed_data = self.transformer.convert(data) 
-        for data in transformed_data:
-            self.loader.load(data)
+        if self.transformer:
+            data = self.transformer.convert(data) 
+        for record in data:
+            self.loader.load(record)
 
  
 

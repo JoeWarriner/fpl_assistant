@@ -14,12 +14,12 @@ class Extracter(ABC):
 
 class APIExtracter(Extracter):
     
-    def __init__(self, api_model_class: type[BaseModel], api_data: list[dict[str, Any]]):
+    def __init__(self, api_model_class: type[BaseModel], api_data_getter: list[dict[str, Any]]):
         self.api_model_class = api_model_class
-        self.api_data = api_data
+        self.api_data_getter = api_data_getter
 
     def extract(self) -> list[Any]:
-        return [self.api_model_class.model_validate(data) for data in self.api_data]
+        return [self.api_model_class.model_validate(data) for data in self.api_data_getter()]
 
 
 
@@ -29,13 +29,12 @@ class DataTableExtracter(Extracter):
         self.filename = filename
         self.pathlib = pathlib
     
-    def extract(self) -> list[Any]:
+    def extract(self) -> pd.DataFrame:
         season_data_list = []
         for season in self.seasons:
             path = self.pathlib.get_season_data_directory(season) / self.filename
-            print(path)
             try:
-                season_data = pd.read_csv(path, encoding = 'latin1')
+                season_data = pd.read_csv(path, encoding = 'utf8')
                 season_data['season'] = season
                 season_data_list.append(season_data)
             except FileNotFoundError:

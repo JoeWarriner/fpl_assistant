@@ -25,10 +25,38 @@ PRIOR_SEASONS_LABELS = [
 
 
 class CreateSeasons:
-    def run(self):
+    def __init__(self, seasons: list[str]) -> None:
+        self.seasons = seasons
+        self.now_month = datetime.datetime.now().month
+        self.now_year = datetime.datetime.now().year
+
+
+    def extract(self):
+        seasons_to_add = []
+        for season in self.seasons:
+            start_year = season[:4]
+            is_current = self.season_is_current(start_year)
+            seasons_to_add.append({
+                'season': season,
+                'is_current': is_current,
+                'start_year': start_year
+            }
+        )
+        return seasons_to_add
+
+    
+    def season_is_current(self, season_start_year: int):
+        return (
+                season_start_year == self.now_year and self.now_month >= 8
+            ) or (
+                season_start_year == self.now_year - 1 and self.now_month < 8
+        )
+
+
         seasons = pd.DataFrame(
             columns = ['is_current', 'start_year', 'season'],
             data = [
+                
                 [False, 2018, '2018-19'],
                 [False, 2019, '2019-20'],
                 [False, 2020, '2020-21'],
@@ -36,7 +64,7 @@ class CreateSeasons:
                 [True, 2022, '2022-23']
             ]
         )
-        seasons.to_sql('seasons', if_exists= 'append', con= dal.engine, index=False)
+        seasons.to_sql('seasons', if_exists= 'append', con=dal.engine, index=False)
 
 
 def get_data_for_all_seasons(filename: Union[Path, str], columns = None, include_seasons_col = True) -> pd.DataFrame:

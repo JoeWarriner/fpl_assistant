@@ -1,6 +1,6 @@
 import requests
 from pathlib import Path
-from utils.paths import ProjectPaths
+from etl.update.utils.paths import ProjectPaths
 from datetime import datetime, date
 import shutil
 import json
@@ -11,6 +11,8 @@ FIXTURES_ENDPOINT = 'https://fantasy.premierleague.com/api/fixtures/'
 PLAYER_DETAIL_ENDPOINT_ROOT = 'https://fantasy.premierleague.com/api/element-summary/'
 
 
+def daily_directory_exists():
+    return ProjectPaths.latest_daily_data_dir.is_dir()
 
 
 def get_daily_directory():
@@ -42,9 +44,12 @@ def extract_detailed_player_data():
         extract_to_file(player_endpoint, filepath)
         
 
-if __name__ == "__main__":
-    today_dir = get_daily_directory()
-    extract_to_file(MAIN_ENDPOINT, ProjectPaths.latest_main_data)
-    extract_to_file(FIXTURES_ENDPOINT, ProjectPaths.latest_fixture_data)
-    extract_detailed_player_data()
+class APIDownloader:
+
+    def run(self):
+        if not daily_directory_exists():
+            today_dir = get_daily_directory()
+            extract_to_file(MAIN_ENDPOINT, ProjectPaths.latest_main_data)
+            extract_to_file(FIXTURES_ENDPOINT, ProjectPaths.latest_fixture_data)
+            extract_detailed_player_data()
 

@@ -1,4 +1,5 @@
-MO_SALAH = [
+def MO_SALAH():
+    return [
         {
             "chance_of_playing_next_round": None,
             "chance_of_playing_this_round": None,
@@ -91,7 +92,8 @@ MO_SALAH = [
         },
     ]
 
-ARSENAL = [
+def ARSENAL():
+    return [
         {
             "code": 3,
             "draw": 0,

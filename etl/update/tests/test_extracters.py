@@ -2,24 +2,51 @@ import pytest
 import pandas as pd
 from pathlib import Path
 from etl.update.extracters import DataTableExtracter
+from etl.update.tests.utils import PathsForTests
+
+SEASONS = ['2021-22', '2022-23']
 
 
-class TestPathLib: 
-    @classmethod
-    def get_season_data_directory(cls, season):
-        return Path(__file__).parents[0].joinpath('test_data', 'test_tables', season)
+
+        
 
 
-def test_df_extract():
-    extractor = DataTableExtracter(['2016-17', '2017-18'], filename='players.csv', pathlib=TestPathLib)
+def test_df_player_extract():
+    extractor = DataTableExtracter(SEASONS, filename='players_raw.csv', pathlib=PathsForTests)
     output = extractor.extract()
     expected_output = pd.DataFrame(
-        columns = ['name', 'season'],
+        columns = ['second_name', 'season'],
         data = [
-            ['Diego Maradonna', '2016-17'],
-            ['Pele', '2016-17'],
-            ['Johan Cruyff', '2017-18'],
-            ['Stanley Matthews', '2017-18'],
+            ['Martínez', '2021-22'],
+            ['de Jesus', '2021-22'],
+            ['Fernando de Jesus', '2022-23'],
+            ['Alexander-Arnold', '2022-23'],
         ])
 
-    pd.testing.assert_frame_equal(output.reset_index(drop=True), expected_output.reset_index(drop=True))
+    # we don't care about order or index values:
+    output = output.sort_values(by='second_name').reset_index(drop=True)
+    expected_output =expected_output.sort_values(by='second_name').reset_index(drop=True)
+
+    pd.testing.assert_frame_equal(output[['second_name', 'season']], expected_output, check_like=True)
+
+
+def test_df_gameweek_extract():
+    extractor = DataTableExtracter(SEASONS, filename=Path('gws', 'merged_gw.csv'), pathlib=PathsForTests)
+    output = extractor.extract()
+    expected_output = pd.DataFrame(
+        columns = ['GW', 'season'],
+        data = [
+            [1 , '2021-22'],
+            [1 , '2021-22'],
+            [2 , '2021-22'],
+            [2 , '2021-22'],
+            [1 , '2022-23'],
+            [1 , '2022-23']
+        ]
+    )
+    print(output)
+
+    output = output.sort_values(by='GW').reset_index(drop=True)
+    expected_output =  expected_output.sort_values(by='GW').reset_index(drop=True)
+    pd.testing.assert_frame_equal(output[['GW', 'season']], expected_output, check_like=True)
+

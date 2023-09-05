@@ -1,0 +1,3 @@
+name,position,team,xP,assists,bonus,bps,clean_sheets,creativity,element,fixture,goals_conceded,goals_scored,ict_index,influence,kickoff_time,minutes,opponent_team,own_goals,penalties_missed,penalties_saved,red_cards,round,saves,selected,team_a_score,team_h_score,threat,total_points,transfers_balance,transfers_in,transfers_out,value,was_home,yellow_cards
+Gabriel Fernando de Jesus,FWD,Man City,7.5,2,3,39,1,42.5,263,16,0,0,10.1,38.4,2021-08-21T14:00:00Z,90,15,0,0,0,0,2,0,236822,0,5,20,11,-17192,33603,50795,85,TRUE,0
+Emiliano Martínez,GK,Aston Villa,4,0,0,17,1,0,30,11,0,0,1,10.2,2021-08-21T14:00:00Z,90,14,0,0,0,0,2,1,2391120,0,2,0,5,-122453,23621,146074,55,TRUE,1
