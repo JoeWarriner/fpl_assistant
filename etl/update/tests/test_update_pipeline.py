@@ -64,7 +64,7 @@ player_fixtures = DataImportPipeline(
 
 
 player_performances = DataImportPipeline(
-        extracter= extracters.APIExtracter(api.PlayerPerformance, ProjectFilesForTests.get_player_detail_json),
+        extracter= extracters.APIExtracter(api.PlayerPerformance, ProjectFilesForTests.get_all_player_performances),
         transformer= adapters.APITranformer(adapter=adapters.PlayerPerformanceAdapter),
         loader = loaders.DBLoader(db.PlayerPerformance)
 )
@@ -406,5 +406,60 @@ def test_player_fixture_import(import_player_fixtures):
     fixture_1 = player_fixture_test_query(season='2023-24', second_name='Ramses Becker', opp='WOL')
     assert fixture_1.is_home == False
 
+
+@pytest.fixture
+def import_player_performances(import_player_fixtures):
+    orchestrator = import_player_fixtures
+    orchestrator.add_task(player_performances, predecessors = {player_seasons, fixtures})
+    return orchestrator
+
+
+def player_performances_test_query(season, second_name, opp):
+    opposition = aliased(db.Team, name='opposition')
+    performance, = db.dal.session.execute(
+        select(
+            db.PlayerPerformance
+        ).join(
+            db.Fixture, db.PlayerPerformance.fixture_id == db.Fixture.id
+        ).join(
+            db.Season, db.Season.id == db.Fixture.season_id
+        ).join(
+            opposition, db.PlayerPerformance.opposition_id == opposition.id
+        ).join(
+            db.Player, db.Player.id == db.PlayerPerformance.player_id
+        ).where(
+            db.Season.season == season
+        ).where(
+            db.Player.second_name == second_name
+        ).where(
+            opposition.short_name == opp
+        )
+        ).one()
+    return performance
+
+
+def test_player_fixture_import(import_player_performances):
+    import_player_performances.run()
+
+    player_performances = db.dal.session.scalars(select(
+        db.PlayerPerformance)
+    ).all()
+    assert len(player_performances) == 2
+
+    performance_1 = player_performances_test_query(season='2023-24', second_name='Álvarez', opp='BUR')
+    assert performance_1.was_home == False
+    assert performance_1.minutes_played == 90
+    assert performance_1.penalties_missed == 0
+    assert performance_1.penalties_saved == 0
+    assert performance_1.player_value == 65
+    assert performance_1.red_cards == 0
+    assert performance_1.yellow_cards == 0
+    assert performance_1.selected == 396614
+    assert performance_1.total_points == 5
+    assert performance_1.goals_scored == 0
+    assert performance_1.goals_conceded == 0
+    assert performance_1.clean_sheet == True
+    assert performance_1.bonus == 0
+    assert performance_1.assists == 1
 
     

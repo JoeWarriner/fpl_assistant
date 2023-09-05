@@ -52,6 +52,15 @@ class ProjectFiles:
                     fixture['element'] = fpl_id
                     all_player_fixtures.append(fixture)
         return all_player_fixtures
+    
+    @classmethod
+    def get_all_player_performances(cls):
+        all_player_performances = []
+        for _, path in cls.pathlib.get_all_player_data_paths():
+            with open(path) as file:
+                player_data = json.loads(file.read())
+                all_player_performances.extend(player_data['history'])
+        return all_player_performances
 
 
                 

@@ -188,18 +188,15 @@ class PlayerFixtureAdapter(Adapter):
 class PlayerPerformanceAdapter(Adapter):
     input: api.PlayerPerformance
     table_ref = db.PlayerPerformance
-
-    def __init__(self, input, player_fpl_season_id: int = None) -> None:
-        super().__init__(input)
-        self.player_fpl_season_id = player_fpl_season_id
     
     def transform(self):
             self.fixture_id  = get_fixture_id(self.input.fixture)
-            self.player_id = get_player_id(self.player_fpl_season_id)
-            self.team = self.get_team_played_for(self.fixture_id)
+            self.player_id = get_player_id(self.input.element)
+            self.team_id = self.get_team_played_for(self.fixture_id)
             self.opposition_id = get_team(self.input.opponent_team)
             self.minutes_played = self.input.minutes
             self.clean_sheet = self.input.clean_sheets
+            self.player_value = self.input.value
                 
 
     def get_team_played_for(self, fixture_id):
