@@ -9,6 +9,7 @@ import etl.update.loaders as loaders
 import etl.update.tests.test_data.test_api_dicts as test_data
 from etl.update.tests.utils import ProjectFilesForTests
 from sqlalchemy import select, insert
+from sqlalchemy.orm import aliased
 
 
 players = DataImportPipeline(
@@ -51,8 +52,8 @@ gameweeks = DataImportPipeline(
 
 fixtures = DataImportPipeline(
         extracter= extracters.APIExtracter(api.Fixture, ProjectFilesForTests.fixtures_json),
-        transformer= adapters.APITranformer(adapter=adapters.TeamSeasonAdapter),
-        loader = loaders.DBLoader(db.TeamSeason)
+        transformer= adapters.APITranformer(adapter=adapters.FixtureAdapter),
+        loader = loaders.DBLoader(db.Fixture)
 )
 
 player_fixtures = DataImportPipeline(
@@ -298,4 +299,67 @@ def test_gameweek_import(import_gameweeks):
     assert gameweek_5.is_previous == False
     assert gameweek_5.is_current == False
     assert gameweek_5.is_next == True
+    
+
+
+@pytest.fixture
+def import_fixtures(import_gameweeks):
+    orchestrator = import_gameweeks
+    orchestrator.add_task(fixtures, predecessors = {gameweeks, team_seasons})
+    return orchestrator
+
+
+def fixture_test_query(season, home, away):
+    away_team = aliased(db.Team, name='away_team')
+    home_team = aliased(db.Team, name='home_team')
+    fixture, = db.dal.session.execute(
+        select(
+            db.Fixture
+        ).join(
+            db.Season, db.Season.id == db.Fixture.season_id
+        ).join(
+            away_team, db.Fixture.away_team_id == away_team.id
+        ).join(
+            home_team, db.Fixture.home_team_id == home_team.id
+        ).where(
+            db.Season.season == season
+        ).where(
+            away_team.short_name == away
+        ).where(
+            home_team.short_name == home
+        )).one()
+    return fixture
+
+
+def test_fixture_import(import_fixtures):
+    import_fixtures.run()
+
+    fixtures = db.dal.session.scalars(select(
+        db.Fixture)
+    ).all()
+    assert len(fixtures) == 2
+
+    fixture_1 = fixture_test_query('2023-24', away='MCI', home='BUR')
+    assert fixture_1.away_team_difficulty == 2
+    assert fixture_1.home_team_difficulty == 5
+    assert fixture_1.away_team_score == 3
+    assert fixture_1.home_team_score == 0
+    assert fixture_1.fpl_id == 1
+    assert fixture_1.fpl_code == 2367538
+    assert fixture_1.kickoff_time == datetime(2023,8,11,20)
+    assert fixture_1.finished == True
+    assert fixture_1.started == True
+
+    
+    fixture_50 = fixture_test_query('2023-24', away='LIV', home='WOL')
+    assert fixture_50.away_team_difficulty == 2
+    assert fixture_50.home_team_difficulty == 4
+    assert fixture_50.away_team_score == None
+    assert fixture_50.home_team_score == None
+    assert fixture_50.fpl_id == 50
+    assert fixture_50.fpl_code == 2367587
+    assert fixture_50.kickoff_time == datetime(2023,9,16,12,30)
+    assert fixture_50.finished == False
+    assert fixture_50.started == False
+    
     

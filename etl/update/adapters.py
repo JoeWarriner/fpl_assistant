@@ -69,9 +69,9 @@ class Adapter:
         self.transform()
         output = {}
         for col in self.db_columns:
-            if self.__dict__.get(col) is not None:
+            if hasattr(self, col):
                 output[col] = self.__dict__.get(col)
-            elif self.input.__dict__.get(col) is not None:
+            elif hasattr(self.input, col):
                 output[col] = self.input.__dict__.get(col)
             else:
                 raise KeyError(
@@ -146,7 +146,7 @@ class FixtureAdapter(Adapter):
     table_ref = db.Fixture
 
     def transform(self):
-        self.gameweek_id = dal.session.scalar(select(db.Gameweek.id).where(db.Gameweek.gw_number) == self.input.event)
+        self.gameweek_id = dal.session.scalar(select(db.Gameweek.id).where(db.Gameweek.gw_number  == self.input.event))
         self.away_team_id = get_team(self.input.team_a)
         self.home_team_id = get_team(self.input.team_h)
         self.away_team_difficulty = self.input.team_a_difficulty
