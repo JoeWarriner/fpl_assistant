@@ -4,5 +4,5 @@ from typing import Any
 
 class Extractor(ABC):
     @abstractmethod
-    def extract() -> list[Any]:
+    def run() -> list[Any]:
         ...

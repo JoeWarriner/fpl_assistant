@@ -1,7 +1,7 @@
 import pytest
 import database.tables as tbl
 from database.data_access_layer import dal
-import etl.seed_db.seed as seed
+import etl.jobs.extractors.create_seasons as create_seasons
 import etl.jobs.transformers.data_table_transformers as tform
 from etl.jobs.loaders.loaders import DBLoader
 import etl.update.api as api
@@ -35,7 +35,7 @@ def database():
     
 
 def test_is_current_season_aug_start_year():
-    season_creater = seed.CreateSeasons(seasons=None)
+    season_creater = create_seasons.CreateSeasons(seasons=None)
     season_creater.now_month = 8
     season_creater.now_year = 2019
     assert not season_creater.season_is_current(season_start_year=2018)
@@ -43,7 +43,7 @@ def test_is_current_season_aug_start_year():
     assert not season_creater.season_is_current(season_start_year=2020)
 
 def test_is_current_season_jul_end_year():
-    season_creater = seed.CreateSeasons(seasons=None)
+    season_creater = create_seasons.CreateSeasons(seasons=None)
     season_creater.now_month = 7
     season_creater.now_year = 2019
     assert not season_creater.season_is_current(season_start_year=2017)
@@ -53,7 +53,7 @@ def test_is_current_season_jul_end_year():
 
 
 seasons = DataImportPipeline(
-        extractor=seed.CreateSeasons(SEASONS_TO_IMPORT),
+        extractor=create_seasons.CreateSeasons(SEASONS_TO_IMPORT),
         transformer=None,
         loader= DBLoader(tbl.Season)
 )

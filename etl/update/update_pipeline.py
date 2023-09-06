@@ -38,7 +38,7 @@ class DataImportPipeline(Task):
 
     def run(self):
 
-        data = self.extractor.extract()
+        data = self.extractor.run()
         
         if self.transformer:
             data = self.transformer.run(data) 

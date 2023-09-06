@@ -9,7 +9,7 @@ class APIExtractor(Extractor):
         self.api_model_class = api_model_class
         self.api_data_getter = api_data_getter
 
-    def extract(self) -> list[Any]:
+    def run(self) -> list[Any]:
         return [self.api_model_class.model_validate(data) for data in self.api_data_getter()]
 
     def __str__(self):

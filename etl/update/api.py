@@ -19,7 +19,6 @@ class GameWeek(BaseModel):
         return cls.model_validate(ProjectFiles.gameweeks_json[0])
 
 
-
 class Team(BaseModel):
     code: int
     id: int

@@ -8,7 +8,7 @@ class DataTableExtractor(Extractor):
         self.filename = filename
         self.pathlib = pathlib
     
-    def extract(self) -> pd.DataFrame:
+    def run(self) -> pd.DataFrame:
         season_data_list = []
         for season in self.seasons:
             path = self.pathlib.get_season_data_directory(season) / self.filename

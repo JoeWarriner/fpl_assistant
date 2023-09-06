@@ -23,7 +23,7 @@ class CreateSeasons:
         self.now_year = datetime.datetime.now().year
 
 
-    def extract(self):
+    def run(self):
         seasons_to_add = []
         for season in self.seasons:
             start_year = season[:4]
