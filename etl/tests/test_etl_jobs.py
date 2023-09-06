@@ -1,7 +1,7 @@
 import pytest
 
-from etl.update.tests.db_fixtures import insert_seasons, database
-from etl.update.tests.utils import PathsForTests
+from etl.tests.db_fixtures import insert_seasons, database
+from etl.tests.utils import PathsForTests
 
 
 from etl.update.update_pipeline import PipelineOrchestrator, DataImportPipeline

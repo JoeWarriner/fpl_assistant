@@ -9,7 +9,7 @@ from etl.update.update_pipeline import PipelineOrchestrator, DataImportPipeline
 from etl.update.adapters import APITranformer, PositionAdapter
 from etl.update.utils.file_handlers import ProjectFiles
 from etl.update.extract_api_data import APIDownloader
-from etl.update.tests.utils import PathsForTests
+from etl.tests.utils import PathsForTests
 from pathlib import Path
 
 

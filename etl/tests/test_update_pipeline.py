@@ -7,7 +7,7 @@ import etl.update.extracters as extracters
 import etl.update.adapters as adapters
 import etl.update.loaders as loaders
 import etl.update.tests.test_data.test_api_dicts as test_data
-from etl.update.tests.utils import ProjectFilesForTests
+from etl.tests.utils import ProjectFilesForTests
 from sqlalchemy import select, insert
 from sqlalchemy.orm import aliased
 

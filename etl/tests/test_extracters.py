@@ -2,7 +2,7 @@ import pytest
 import pandas as pd
 from pathlib import Path
 from etl.update.extracters import DataTableExtracter
-from etl.update.tests.utils import PathsForTests
+from etl.tests.utils import PathsForTests
 
 SEASONS = ['2021-22', '2022-23']
 
