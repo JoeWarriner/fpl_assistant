@@ -1,6 +1,7 @@
 from __future__ import annotations
 from sqlalchemy.dialects.postgresql import insert
 from typing import Any, Optional
+from etl.jobs.transformers.base_transformer import Transformer
 from abc import ABC, abstractmethod
 from sqlalchemy import select
 from sqlalchemy.orm import Session, DeclarativeBase
@@ -8,7 +9,7 @@ from database.data_access_layer import dal
 import database.tables as tbl
 import etl.jobs.api as api
 
-class APITransformer:
+class APITransformer(Transformer):
     def __init__(self, adapter: type[Adapter]):
         self.adapter = adapter
     

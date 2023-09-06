@@ -2,6 +2,7 @@ import datetime
 from pathlib import Path
 import os
 from database.data_access_layer import dal
+from etl.jobs.extractors.base_extractor import Extractor
 
 data_path = Path(os.getcwd(), 'etl', 'input', 'data')
 
@@ -16,7 +17,7 @@ PRIOR_SEASONS_LABELS = [
 ]
 
 
-class CreateSeasons:
+class CreateSeasons(Extractor):
     def __init__(self, seasons: list[str]) -> None:
         self.seasons = seasons
         self.now_month = datetime.datetime.now().month

@@ -2,7 +2,7 @@ import pytest
 from datetime import datetime
 import database.tables as tbl 
 from database.data_access_layer import dal
-from etl.pipeline.etl_pipeline import  DataImportPipeline
+from etl.pipeline.etl_pipeline import DataImportPipeline
 from etl.pipeline.base_pipeline import Pipeline
 import etl.jobs.api as api
 import etl.jobs.extractors.api_extractors as extractor

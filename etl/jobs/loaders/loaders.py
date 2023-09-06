@@ -8,7 +8,17 @@ class DBLoader(Loader):
     def __init__(self, table: DeclarativeBase):
         self.table = table
     
-    def run(self, data_dict): 
+    def run(self, data):
+        if isinstance(data, dict):
+            self.load_single(data)
+        elif isinstance(data, list):
+            self.load_multiple(data)
+    
+    def load_multiple(self, data):
+        for record in data:
+            self.load_single(record)
+
+    def load_single(self, data_dict):
         insert_stmt = insert(
                 self.table
             ).values(

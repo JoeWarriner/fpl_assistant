@@ -2,10 +2,10 @@ from etl.pipeline.serializers import PipelineTaskSerializer, DAGTopologicalSeria
 from etl.jobs.base_job import Job
 
 
-class Pipeline:
+class Pipeline(Job):
+    task_serializer: type[PipelineTaskSerializer] = DAGTopologicalSerializer
 
-    def __init__(self, task_serializer: type[PipelineTaskSerializer] = DAGTopologicalSerializer):
-        self.task_serializer = task_serializer
+    def __init__(self):
         self.tasks: dict[Job, set[Job]] = {}         
         
     @property
@@ -19,5 +19,10 @@ class Pipeline:
     def run(self):
         serializer = self.task_serializer(self.tasks)
         sorted_task_list = serializer.serialize()
+        data = None
         for task in sorted_task_list:
-            task.run()
+            if task.expects_input: 
+                data = task.run(data)
+            else:
+                data = task.run()
+            

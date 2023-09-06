@@ -45,6 +45,7 @@ def extract_detailed_player_data():
         
 
 class APIDownloader:
+    expects_input = False
 
     def run(self):
         if not daily_directory_exists():

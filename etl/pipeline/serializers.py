@@ -2,15 +2,23 @@ from etl.jobs.base_job import Job
 from abc import ABC
 
 class PipelineTaskSerializer(ABC):
+    def __init__(self, task_predecessor_mapping: dict[Job, set[Job]]):
+        self.graph = task_predecessor_mapping
+
+
     def serialize() -> list[Job]:
         ...
 
 
+class SimpleSerializer(PipelineTaskSerializer):
+    def serialize(self) -> list[Job]:
+        return list(self.graph.keys())
 
-class DAGTopologicalSerializer:
+
+
+class DAGTopologicalSerializer(PipelineTaskSerializer):
     
-    def __init__(self, task_predecessor_mapping: dict[Job, set[Job]]):
-        self.graph = task_predecessor_mapping
+
 
     def serialize(self):
     

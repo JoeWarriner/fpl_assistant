@@ -1,10 +1,11 @@
 from typing import Callable
+from etl.jobs.transformers.base_transformer import Transformer
 from database.data_access_layer import dal
 from datetime import datetime
 import pandas as pd
 import sqlalchemy
 
-class DataTableTransformer:
+class DataTableTransformer(Transformer):
     dataframe: pd.DataFrame
 
     def __init__(self):
