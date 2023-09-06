@@ -6,7 +6,7 @@ class PathsForTests(ProjectPaths):
     @classmethod
     @property
     def files_directory(cls):
-        return cls.project_directory.joinpath('etl', 'test_files')
+        return cls.project_directory.joinpath('etl', 'tests', 'test_files')
     
     @classmethod
     @property
