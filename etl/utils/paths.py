@@ -66,7 +66,11 @@ class ProjectPaths:
     @classmethod
     def get_season_data_directory(cls, season: str) -> list[Path]:
         return cls.table_data_directory.joinpath(season)
-        
+
+
+
+
+
         
 if __name__ == '__main__':
     print(ProjectPaths.get_latest_player_data_path(500))

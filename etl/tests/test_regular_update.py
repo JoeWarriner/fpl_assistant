@@ -1,75 +1,22 @@
 import pytest
-from datetime import datetime
+from datetime import datetime, date
 import database.tables as tbl 
 from database.data_access_layer import dal
-from etl.pipeline.etl_pipeline import DataImportPipeline
-from etl.pipeline.base_pipeline import Pipeline
+from etl.pipeline_management.etl_pipeline import DataImportPipeline
+from etl.pipeline_management.base_pipeline import Pipeline
 import etl.jobs.extractors.api.api_models as api_models
 import etl.jobs.extractors.api_extractors as extractor
 import etl.jobs.transformers.api_transformers as api_transformers
 import etl.jobs.loaders.loaders as loaders
-from etl.tests.utils import ProjectFilesForTests
+from etl.tests.utils import ProjectFilesforTests
 from sqlalchemy import select, insert
 from sqlalchemy.orm import aliased
 
+from etl.imports.regular_import import RegularImport
 
-players = DataImportPipeline(
-        extractor= extractor.APIExtractor(api_models.Player, ProjectFilesForTests.player_overview_json),
-        transformer= api_transformers.APITransformer(adapter=api_transformers.PlayerAdapter),
-        loader = loaders.DBLoader(tbl.Player)
-)
-
-teams = DataImportPipeline(
-        extractor= extractor.APIExtractor(api_models.Team, ProjectFilesForTests.teams_json),
-        transformer= api_transformers.APITransformer(adapter=api_transformers.TeamAdapter),
-        loader = loaders.DBLoader(tbl.Team)
-)
-
-
-positions = DataImportPipeline(
-        extractor= extractor.APIExtractor(api_models.Position, ProjectFilesForTests.positions_json),
-        transformer= api_transformers.APITransformer(adapter=api_transformers.PositionAdapter),
-        loader = loaders.DBLoader(tbl.Position)
-)
-
-player_seasons = DataImportPipeline(
-        extractor= extractor.APIExtractor(api_models.Player, ProjectFilesForTests.player_overview_json),
-        transformer= api_transformers.APITransformer(adapter=api_transformers.PlayerSeason),
-        loader = loaders.DBLoader(tbl.PlayerSeason)
-)
-
-team_seasons = DataImportPipeline(
-        extractor= extractor.APIExtractor(api_models.Team, ProjectFilesForTests.teams_json),
-        transformer= api_transformers.APITransformer(adapter=api_transformers.TeamSeasonAdapter),
-        loader = loaders.DBLoader(tbl.TeamSeason)
-)
-
-
-gameweeks = DataImportPipeline(
-        extractor= extractor.APIExtractor(api_models.GameWeek, ProjectFilesForTests.gameweeks_json),
-        transformer= api_transformers.APITransformer(adapter=api_transformers.GameWeekAdapter),
-        loader = loaders.DBLoader(tbl.Gameweek)
-)
-
-fixtures = DataImportPipeline(
-        extractor= extractor.APIExtractor(api_models.Fixture, ProjectFilesForTests.fixtures_json),
-        transformer= api_transformers.APITransformer(adapter=api_transformers.FixtureAdapter),
-        loader = loaders.DBLoader(tbl.Fixture)
-)
-
-player_fixtures = DataImportPipeline(
-        extractor= extractor.APIExtractor(api_models.PlayerFixture, ProjectFilesForTests.get_all_player_fixtures),
-        transformer= api_transformers.APITransformer(adapter=api_transformers.PlayerFixtureAdapter),
-        loader = loaders.DBLoader(tbl.PlayerFixture)
-)
-
-
-player_performances = DataImportPipeline(
-        extractor= extractor.APIExtractor(api_models.PlayerPerformance, ProjectFilesForTests.get_all_player_performances),
-        transformer= api_transformers.APITransformer(adapter=api_transformers.PlayerPerformanceAdapter),
-        loader = loaders.DBLoader(tbl.PlayerPerformance)
-)
-
+RegularImport.file_handler = ProjectFilesforTests
+RegularImport.today_date = date(2023,9,1)
+regular_import = RegularImport()
 
 
 @pytest.fixture
@@ -87,21 +34,24 @@ def database():
 
 @pytest.fixture
 def insert_season(database):
-    dal.session.execute(
-        insert(tbl.Season).values({
-            tbl.Season.id: 2,
-            tbl.Season.start_year: 2023,
-            tbl.Season.season: '2023-24',
-            tbl.Season.is_current: True
-        }
-    )
-)
+    orchestrator = Pipeline()
+    orchestrator.add_task(regular_import.seasons)
+    return orchestrator
+
+
+def test_season_import(insert_season):
+    insert_season.run()
+    season = dal.session.scalar(select(tbl.Season))
+    assert season.season == '2023-24'
+    assert season.is_current == True
+    assert season.start_year == 2023
+
 
 
 @pytest.fixture
 def import_players(insert_season):
-    orchestrator = Pipeline()
-    orchestrator.add_task(players)
+    orchestrator = insert_season
+    orchestrator.add_task(regular_import.players, predecessors= {regular_import.seasons})
     return orchestrator
 
 
@@ -126,7 +76,7 @@ def test_player_import(import_players):
 @pytest.fixture
 def import_teams(import_players):
     orchestrator = import_players
-    orchestrator.add_task(teams)
+    orchestrator.add_task(regular_import.teams, predecessors = {regular_import.seasons})
     return orchestrator
 
 def test_team_import(import_teams):
@@ -148,7 +98,7 @@ def test_team_import(import_teams):
 @pytest.fixture
 def import_positions(import_teams):
     orchestrator = import_teams
-    orchestrator.add_task(positions)
+    orchestrator.add_task(regular_import.positions, predecessors = {regular_import.seasons})
     return orchestrator
 
 def test_position_import(import_positions):
@@ -170,7 +120,7 @@ def test_position_import(import_positions):
 @pytest.fixture
 def import_team_seasons(import_positions):
     orchestrator = import_positions
-    orchestrator.add_task(team_seasons, predecessors={teams})
+    orchestrator.add_task(regular_import.team_seasons, predecessors={regular_import.teams})
     return orchestrator
 
 
@@ -210,7 +160,7 @@ def test_team_season_import(import_team_seasons):
 @pytest.fixture
 def import_player_seasons(import_team_seasons):
     orchestrator = import_team_seasons
-    orchestrator.add_task(player_seasons, predecessors={players, team_seasons, positions})
+    orchestrator.add_task(regular_import.player_seasons, predecessors={regular_import.players, regular_import.team_seasons, regular_import.positions})
     return orchestrator
 
 def player_season_test_query(first_name, season):
@@ -261,7 +211,7 @@ def test_player_season_import(import_player_seasons):
 @pytest.fixture
 def import_gameweeks(import_player_seasons):
     orchestrator = import_player_seasons
-    orchestrator.add_task(gameweeks)
+    orchestrator.add_task(regular_import.gameweeks)
     return orchestrator
 
 def gamweek_test_query(gw_number, season):
@@ -306,7 +256,7 @@ def test_gameweek_import(import_gameweeks):
 @pytest.fixture
 def import_fixtures(import_gameweeks):
     orchestrator = import_gameweeks
-    orchestrator.add_task(fixtures, predecessors = {gameweeks, team_seasons})
+    orchestrator.add_task(regular_import.fixtures, predecessors = {regular_import.gameweeks, regular_import.team_seasons})
     return orchestrator
 
 
@@ -368,7 +318,7 @@ def test_fixture_import(import_fixtures):
 @pytest.fixture
 def import_player_fixtures(import_fixtures):
     orchestrator = import_fixtures
-    orchestrator.add_task(player_fixtures, predecessors = {player_seasons, fixtures})
+    orchestrator.add_task(regular_import.player_fixtures, predecessors = {regular_import.player_seasons, regular_import.fixtures})
     return orchestrator
 
 
@@ -411,7 +361,7 @@ def test_player_fixture_import(import_player_fixtures):
 @pytest.fixture
 def import_player_performances(import_player_fixtures):
     orchestrator = import_player_fixtures
-    orchestrator.add_task(player_performances, predecessors = {player_seasons, fixtures})
+    orchestrator.add_task(regular_import.player_performances, predecessors = {regular_import.player_seasons, regular_import.fixtures})
     return orchestrator
 
 

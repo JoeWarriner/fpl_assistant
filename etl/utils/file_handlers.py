@@ -1,6 +1,8 @@
 from etl.utils.paths import ProjectPaths
+from etl.config import TESTING
 import json
 import os
+
 
 class ProjectFiles:
     pathlib = ProjectPaths
@@ -63,4 +65,3 @@ class ProjectFiles:
         return all_player_performances
 
 
-                

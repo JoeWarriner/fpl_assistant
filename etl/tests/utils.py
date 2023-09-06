@@ -12,6 +12,6 @@ class PathsForTests(ProjectPaths):
     @property
     def latest_daily_data_dir(cls):
         return cls.files_directory.joinpath('api_data', '2023-09-05')
-    
-class ProjectFilesForTests(ProjectFiles):
+
+class ProjectFilesforTests(ProjectFiles):
     pathlib = PathsForTests

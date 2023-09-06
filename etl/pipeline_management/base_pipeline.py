@@ -1,4 +1,4 @@
-from etl.pipeline.serializers import PipelineTaskSerializer, DAGTopologicalSerializer
+from etl.pipeline_management.serializers import PipelineTaskSerializer, DAGTopologicalSerializer
 from etl.jobs.base_job import Job
 
 

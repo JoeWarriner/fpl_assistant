@@ -1,9 +1,9 @@
-from etl.pipeline.serializers import SimpleSerializer
+from etl.pipeline_management.serializers import SimpleSerializer
 from etl.jobs.extractors.data_table_extractor import Extractor
 from etl.jobs.transformers.base_transformer import Transformer
 from etl.jobs.loaders.base_loader import Loader
 
-from etl.pipeline.base_pipeline import Pipeline
+from etl.pipeline_management.base_pipeline import Pipeline
 
 class DataImportPipeline(Pipeline):
     task_serializer = SimpleSerializer
@@ -23,3 +23,8 @@ class DataImportPipeline(Pipeline):
     
     def __repr__(self) -> str:
         return f'Import job for table: {self.loader.table}.'
+
+
+
+
+    

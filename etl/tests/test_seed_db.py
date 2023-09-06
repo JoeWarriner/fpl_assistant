@@ -7,8 +7,8 @@ from etl.jobs.loaders.loaders import DBLoader
 import etl.jobs.extractors.api.api_models as api_models
 from etl.jobs.extractors.data_table_extractor import DataTableExtractor
 from etl.jobs.extractors.api_extractors import APIExtractor
-from etl.pipeline.base_pipeline import Pipeline
-from etl.pipeline.etl_pipeline import DataImportPipeline
+from etl.pipeline_management.base_pipeline import Pipeline
+from etl.pipeline_management.etl_pipeline import DataImportPipeline
 from etl.jobs.transformers.api_transformers import APITransformer, PositionAdapter
 from etl.utils.file_handlers import ProjectFiles
 from etl.jobs.extractors.api.api_download import APIDownloader
@@ -35,26 +35,11 @@ def database():
     dal.session.close()
     
 
-def test_is_current_season_aug_start_year():
-    season_creater = seasons_extractor.CreateSeasons(seasons=None)
-    season_creater.now_month = 8
-    season_creater.now_year = 2019
-    assert not season_creater.season_is_current(season_start_year=2018)
-    assert season_creater.season_is_current(season_start_year=2019)
-    assert not season_creater.season_is_current(season_start_year=2020)
-
-def test_is_current_season_jul_end_year():
-    season_creater = seasons_extractor.CreateSeasons(seasons=None)
-    season_creater.now_month = 7
-    season_creater.now_year = 2019
-    assert not season_creater.season_is_current(season_start_year=2017)
-    assert season_creater.season_is_current(season_start_year=2018)
-    assert not season_creater.season_is_current(season_start_year=2019)
 
 
 
 seasons = DataImportPipeline(
-        extractor=seasons_extractor.CreateSeasons(SEASONS_TO_IMPORT),
+        extractor=seasons_extractor.CreateSeasonsFromList(SEASONS_TO_IMPORT),
         transformer=None,
         loader= DBLoader(tbl.Season)
 )
