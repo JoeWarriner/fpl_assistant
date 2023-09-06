@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 import etl.jobs.extractors.extractors as extract
 from etl.jobs.extractors.extractors import Extractor
 import etl.update.api as api
-import etl.update.adapters as tform
+import etl.jobs.transformers.adapters as tform
 import etl.update.loaders as load
 from etl.utils.file_handlers import ProjectFiles
 from database.tables import Gameweek
