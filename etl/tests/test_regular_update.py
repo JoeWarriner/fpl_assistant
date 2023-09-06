@@ -178,8 +178,6 @@ def test_player_season_import(import_player_seasons):
     player_seasons = dal.session.scalars(select(
         tbl.PlayerSeason)
     ).all()
-    for player_season in player_seasons:
-        print(player_season.__dict__)
     assert len(player_seasons) == 4
 
     second_name, short_name, fpl_id = player_season_test_query('Alisson', '2023-24')

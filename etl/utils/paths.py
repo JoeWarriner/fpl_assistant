@@ -69,8 +69,3 @@ class ProjectPaths:
 
 
 
-
-
-        
-if __name__ == '__main__':
-    print(ProjectPaths.get_latest_player_data_path(500))

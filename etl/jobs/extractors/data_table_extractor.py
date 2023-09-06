@@ -13,11 +13,17 @@ class DataTableExtractor(Extractor):
         for season in self.seasons:
             path = self.pathlib.get_season_data_directory(season) / self.filename
             try:
-                season_data = pd.read_csv(path, encoding = 'utf8')
+                season_data = pd.read_csv(path, encoding = 'utf-8')
+                season_data['season'] = season
+                season_data_list.append(season_data)
+            except UnicodeDecodeError:
+                season_data = pd.read_csv(path, encoding='latin1')
                 season_data['season'] = season
                 season_data_list.append(season_data)
             except FileNotFoundError:
                 print(f'No {self.filename} file found for season: {season}')
+            
+            
         all_season_data = pd.concat(season_data_list)
         return all_season_data
     

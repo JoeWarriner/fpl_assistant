@@ -44,7 +44,6 @@ def test_df_gameweek_extract():
             [1 , '2022-23']
         ]
     )
-    print(output)
 
     output = output.sort_values(by='GW').reset_index(drop=True)
     expected_output =  expected_output.sort_values(by='GW').reset_index(drop=True)

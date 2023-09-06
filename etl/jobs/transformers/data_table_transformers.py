@@ -99,8 +99,8 @@ class PlayerSeasonTransformer(DataTableTransformer):
 
 class GameWeekTransformer(DataTableTransformer):
     def do_transformations(self, data: pd.DataFrame) -> pd.DataFrame:
-        gameweek_data = data[['kickoff_time', 'GW', 'season_id']]
-        gameweek_data = gameweek_data.groupby(['GW','season_id']
+        gameweek_data = data[['kickoff_time', 'event', 'season_id']]
+        gameweek_data = gameweek_data.groupby(['event','season_id']
             ).min(
             ).reset_index(
             ).assign(
@@ -110,7 +110,7 @@ class GameWeekTransformer(DataTableTransformer):
                 deadline_time = lambda df: [datetime.strptime(value, r'%Y-%m-%dT%H:%M:%SZ') for value in df['kickoff_time']],
                 is_previous = lambda df: [(value == df['deadline_time'].max()) for value in df['deadline_time']]
             ).drop(columns=['kickoff_time']
-            ).rename(columns = {'GW':'gw_number'})
+            ).rename(columns = {'event':'gw_number'})
         return gameweek_data
     
 
@@ -123,7 +123,6 @@ class FixturesTransformer(DataTableTransformer):
 
         team_season_query = f'SELECT fpl_id as team_season_id, team_id, season_id as season FROM team_seasons;'
         team_seasons = pd.DataFrame(dal.session.execute(sqlalchemy.text(team_season_query)).all())
-        print(team_seasons)
 
         gameweek_query = f'SELECT id as gameweek_id, season_id as season, gw_number FROM gameweeks;'
         gameweeks = pd.DataFrame(dal.session.execute(sqlalchemy.text(gameweek_query)).all())

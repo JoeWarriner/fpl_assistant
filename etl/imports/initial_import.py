@@ -64,7 +64,7 @@ class InitialImport(Job):
         )
 
         self.gameweeks = DataImportPipeline(
-            extractor = DataTableExtractor(self.seasons_to_import, Path('gws', 'merged_gw.csv'), pathlib = self.pathlib),
+            extractor = DataTableExtractor(self.seasons_to_import,'fixtures.csv', pathlib = self.pathlib),
             transformer= tform.GameWeekTransformer(),
             loader = DBLoader(tbl.Gameweek)
         )
@@ -93,7 +93,7 @@ class InitialImport(Job):
         pipeline.add_task(self.team_seasons, predecessors={self.teams, self.seasons})
         pipeline.add_task(self.gameweeks, predecessors={self.seasons})
         pipeline.add_task(self.fixtures, predecessors={self.team_seasons, self.gameweeks})
-        pipeline.add_task(self.player_performances, predecessors = {self.players, self.fixtures})
+        pipeline.add_task(self.player_performances, predecessors = {self.player_seasons, self.fixtures})
         return pipeline
 
     def run(self):

@@ -135,7 +135,6 @@ def test_fixtures_import(fixtures_import):
             tbl.Season.start_year == 2022 and tbl.Team.short_name == 'LIV'
             )
     )
-    print(test_fixture_home.__dict__)
     assert test_fixture_home.fpl_code == 2292810
     assert test_fixture_home.fpl_id == 1
 
