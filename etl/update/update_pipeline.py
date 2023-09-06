@@ -5,8 +5,8 @@ from abc import ABC, abstractmethod
 from copy import copy
 from sqlalchemy.orm import Session
 
-import etl.jobs.extractors.extractors as extract
-from etl.jobs.extractors.extractors import Extractor
+import etl.jobs.extractors.data_table_extractor as extract
+from etl.jobs.extractors.data_table_extractor import Extractor
 from etl.jobs.transformers.base_transformer import Transformer
 from etl.jobs.loaders.base_loader import Loader
 import etl.update.api as api
