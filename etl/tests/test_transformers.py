@@ -3,20 +3,20 @@ from datetime import datetime
 import etl.seed_db.data_files as tform
 from etl.tests.test_seed_db import database
 from sqlalchemy.dialects.postgresql import insert
-import database.database as db
+import database.tables as tbl
 import pandas as pd
-from database.database import dal
+from database.data_access_layer import dal
 
 
 
 @pytest.fixture
 def insert_season(database):
     dal.session.execute(
-        insert(db.Season).values({
-            db.Season.id: 1,
-            db.Season.start_year: 2021,
-            db.Season.season: '2021-22',
-            db.Season.is_current: False
+        insert(tbl.Season).values({
+            tbl.Season.id: 1,
+            tbl.Season.start_year: 2021,
+            tbl.Season.season: '2021-22',
+            tbl.Season.is_current: False
         }
     )
 )

@@ -8,7 +8,7 @@ import requests
 import os
 import numpy as np
 import sqlalchemy
-from database.database import dal
+from database.data_access_layer import dal
 
 data_path = Path(os.getcwd(), 'etl', 'input', 'data')
 

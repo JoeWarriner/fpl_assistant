@@ -1,5 +1,6 @@
 import pytest
-import database.database as db
+import database.tables as tbl
+from database.data_access_layer import dal
 import etl.seed_db.seed as seed
 import etl.seed_db.data_files as tform
 from etl.update.loaders import DBLoader
@@ -23,13 +24,13 @@ SEASONS_TO_IMPORT = [
 
 @pytest.fixture
 def database():
-    db.dal.conn_string = 'postgresql+psycopg2://postgres@localhost/fftest'
-    db.dal.connect()
-    db.dal.reset_tables() # Want to start from an empty database.
-    db.dal.session = db.dal.Session()
+    dal.conn_string = 'postgresql+psycopg2://postgres@localhost/fftest'
+    dal.connect()
+    dal.reset_tables() # Want to start from an empty database.
+    dal.session = dal.Session()
     yield
-    db.dal.session.rollback()
-    db.dal.session.close()
+    dal.session.rollback()
+    dal.session.close()
     
 
 def test_is_current_season_aug_start_year():
@@ -55,63 +56,63 @@ def test_is_current_season_jul_end_year():
 #         loader= DBLoader(db.Season)
 #     )
 #     seasons.run()
-#     season_2021 = db.dal.session.scalar(select(db.Season).where(db.Season.start_year == 2021))
+#     season_2021 = dal.session.scalar(select(db.Season).where(db.Season.start_year == 2021))
 #     assert season_2021.season == '2021-22'
-#     all_seasons = db.dal.session.execute(select(db.Season)).all()
+#     all_seasons = dal.session.execute(select(db.Season)).all()
 #     assert len(all_seasons) == 5
 
 seasons = DataImportPipeline(
         extracter=seed.CreateSeasons(SEASONS_TO_IMPORT),
         transformer=None,
-        loader= DBLoader(db.Season)
+        loader= DBLoader(tbl.Season)
 )
 
 players = DataImportPipeline(
         extracter = DataTableExtracter(SEASONS_TO_IMPORT, 'players_raw.csv', pathlib = PathsForTests),
         transformer = tform.PlayerTransformer(),
-        loader =  DBLoader(db.Player)
+        loader =  DBLoader(tbl.Player)
     )
 
 teams = DataImportPipeline(
     extracter= DataTableExtracter(SEASONS_TO_IMPORT, 'teams.csv', pathlib = PathsForTests),
     transformer= tform.TeamTransformer(),
-    loader = DBLoader(db.Team)
+    loader = DBLoader(tbl.Team)
 )
 
 team_seasons = DataImportPipeline(
     extracter= DataTableExtracter(SEASONS_TO_IMPORT, 'players_raw.csv', pathlib = PathsForTests),
     transformer= tform.TeamSeasonTransformer(),
-    loader=DBLoader(db.TeamSeason)
+    loader=DBLoader(tbl.TeamSeason)
 )
 
 positions = DataImportPipeline(
     extracter = APIExtracter(api.Position, ProjectFiles.positions_json),
     transformer = APITranformer(PositionAdapter),
-    loader = DBLoader(db.Position)
+    loader = DBLoader(tbl.Position)
 )
 
 player_seasons = DataImportPipeline(
     extracter= DataTableExtracter(SEASONS_TO_IMPORT, 'players_raw.csv', pathlib = PathsForTests),
     transformer=tform.PlayerSeasonTransformer(),
-    loader = DBLoader(db.PlayerSeason)
+    loader = DBLoader(tbl.PlayerSeason)
 )
 
 gameweeks = DataImportPipeline(
     extracter = DataTableExtracter(SEASONS_TO_IMPORT, Path('gws', 'merged_gw.csv'), pathlib = PathsForTests),
     transformer= tform.GameWeekTransformer(),
-    loader = DBLoader(db.Gameweek)
+    loader = DBLoader(tbl.Gameweek)
 )
 
 fixtures = DataImportPipeline(
     extracter = DataTableExtracter(SEASONS_TO_IMPORT, 'fixtures.csv', pathlib = PathsForTests),
     transformer=tform.FixturesTransformer(),
-    loader=DBLoader(db.Fixture)
+    loader=DBLoader(tbl.Fixture)
 )
 
 player_performances = DataImportPipeline(
     extracter=DataTableExtracter(SEASONS_TO_IMPORT, Path('gws', 'merged_gw.csv'), pathlib = PathsForTests),
     transformer= tform.PlayerPerformanceTransformer(),
-    loader= DBLoader(db.PlayerPerformance)
+    loader= DBLoader(tbl.PlayerPerformance)
 )
 
 api_download = APIDownloader()
@@ -128,9 +129,9 @@ def seasons_import(database):
 
 def test_seasons_import(seasons_import):
     seasons_import.run()
-    test_season = db.dal.session.scalar(select(db.Season).where(db.Season.start_year == 2022))
+    test_season = dal.session.scalar(select(tbl.Season).where(tbl.Season.start_year == 2022))
     assert test_season.season == '2022-23'
-    all_seasons = db.dal.session.execute(select(db.Season)).all()
+    all_seasons = dal.session.execute(select(tbl.Season)).all()
     assert len(all_seasons)  == len(SEASONS_TO_IMPORT)
 
 
@@ -142,10 +143,10 @@ def players_import(seasons_import: PipelineOrchestrator):
 
 def test_players_import(players_import):
     players_import.run()
-    test_player = db.dal.session.scalar(select(db.Player).where(db.Player.first_name == 'Trent'))
+    test_player = dal.session.scalar(select(tbl.Player).where(tbl.Player.first_name == 'Trent'))
     assert test_player.second_name == 'Alexander-Arnold'
     assert test_player.fpl_id == 169187
-    all_players = db.dal.session.execute(select(db.Player)).all()
+    all_players = dal.session.execute(select(tbl.Player)).all()
     assert len(all_players) == 3
 
 
@@ -157,10 +158,10 @@ def teams_import(players_import: PipelineOrchestrator):
 
 def test_teams_import(teams_import):
     teams_import.run()
-    test_team = db.dal.session.scalar(select(db.Team).where(db.Team.short_name == 'LIV'))
+    test_team = dal.session.scalar(select(tbl.Team).where(tbl.Team.short_name == 'LIV'))
     assert test_team.team_name == 'Liverpool'
     assert test_team.fpl_id == 14
-    all_teams = db.dal.session.execute(select(db.Team)).all()
+    all_teams = dal.session.execute(select(tbl.Team)).all()
     assert len(all_teams) == 11
 
 @pytest.fixture
@@ -171,7 +172,7 @@ def team_seasons_import(teams_import:PipelineOrchestrator):
 
 def test_team_seasons_import(team_seasons_import):
     team_seasons_import.run()
-    test_team_season = db.dal.session.scalar(select(db.TeamSeason).join(db.TeamSeason.team).join(db.TeamSeason.season).where(db.Team.short_name == 'LIV' and db.Season.start_year == 2022))
+    test_team_season = dal.session.scalar(select(tbl.TeamSeason).join(tbl.TeamSeason.team).join(tbl.TeamSeason.season).where(tbl.Team.short_name == 'LIV' and tbl.Season.start_year == 2022))
     assert test_team_season.fpl_id == 12
 
 
@@ -184,7 +185,7 @@ def positions_import(team_seasons_import: PipelineOrchestrator):
     
 def test_positions_import(positions_import):
     positions_import.run()
-    test_position = db.dal.session.scalar(select(db.Position).where(db.Position.short_name == 'DEF'))
+    test_position = dal.session.scalar(select(tbl.Position).where(tbl.Position.short_name == 'DEF'))
     assert test_position.pos_name == 'Defender'
 
 
@@ -196,7 +197,7 @@ def player_seasons_import(positions_import: PipelineOrchestrator):
 
 def test_player_seasons_import(player_seasons_import):
     player_seasons_import.run()
-    test_ps = db.dal.session.scalar(select(db.PlayerSeason).join(db.Season).join(db.Player).where(db.Player.first_name == 'Trent' and  db.Season.start_year == 2022))
+    test_ps = dal.session.scalar(select(tbl.PlayerSeason).join(tbl.Season).join(tbl.Player).where(tbl.Player.first_name == 'Trent' and  tbl.Season.start_year == 2022))
     assert test_ps.fpl_id == 285
 
 
@@ -208,7 +209,7 @@ def gameweeks_import(player_seasons_import: PipelineOrchestrator):
 
 def test_gameweeks_import(gameweeks_import):
     gameweeks_import.run()
-    test_gw = db.dal.session.scalar(select(db.Gameweek).join(db.Season).where(db.Gameweek.gw_number == 1 and db.Season.start_year == 2022))
+    test_gw = dal.session.scalar(select(tbl.Gameweek).join(tbl.Season).where(tbl.Gameweek.gw_number == 1 and tbl.Season.start_year == 2022))
     assert test_gw
 
 
@@ -220,30 +221,30 @@ def fixtures_import(gameweeks_import: PipelineOrchestrator):
 
 def test_fixtures_import(fixtures_import):
     fixtures_import.run()
-    test_fixture_home  = db.dal.session.scalar(
+    test_fixture_home  = dal.session.scalar(
         select(
-            db.Fixture
+            tbl.Fixture
         ).join(
-            db.Season
+            tbl.Season
         ).join(
-            db.Team, db.Fixture.home_team_id == db.Team.id
+            tbl.Team, tbl.Fixture.home_team_id == tbl.Team.id
         ).where(
-            db.Season.start_year == 2022 and db.Team.short_name == 'LIV'
+            tbl.Season.start_year == 2022 and tbl.Team.short_name == 'LIV'
             )
     )
     print(test_fixture_home.__dict__)
     assert test_fixture_home.fpl_code == 2292810
     assert test_fixture_home.fpl_id == 1
 
-    test_fixture_away = db.dal.session.scalar(
+    test_fixture_away = dal.session.scalar(
         select(
-            db.Fixture
+            tbl.Fixture
         ).join(
-            db.Season
+            tbl.Season
         ).join(
-            db.Team, db.Fixture.away_team_id == db.Team.id
+            tbl.Team, tbl.Fixture.away_team_id == tbl.Team.id
         ).where(
-            db.Season.start_year == 2022 and db.Team.short_name == 'ARS'
+            tbl.Season.start_year == 2022 and tbl.Team.short_name == 'ARS'
             )
     )
 
@@ -259,22 +260,22 @@ def player_performances_import(fixtures_import: PipelineOrchestrator):
 
 
 def query_player_performance(gameweek, season, first_name):
-    output  = db.dal.session.execute(
+    output  = dal.session.execute(
         select(
-            db.Team.short_name,
-            db.PlayerPerformance.was_home,
-            db.PlayerPerformance.total_points
+            tbl.Team.short_name,
+            tbl.PlayerPerformance.was_home,
+            tbl.PlayerPerformance.total_points
         ).join(
-            db.PlayerPerformance, db.PlayerPerformance.opposition_id == db.Team.id
+            tbl.PlayerPerformance, tbl.PlayerPerformance.opposition_id == tbl.Team.id
         ).join(
-            db.Fixture, db.PlayerPerformance.fixture_id == db.Fixture.id
+            tbl.Fixture, tbl.PlayerPerformance.fixture_id == tbl.Fixture.id
         ).join(
-            db.Gameweek, db.Gameweek.id == db.Fixture.gameweek_id
+            tbl.Gameweek, tbl.Gameweek.id == tbl.Fixture.gameweek_id
         ).join(
-            db.Season, db.Fixture.season_id == db.Season.id
+            tbl.Season, tbl.Fixture.season_id == tbl.Season.id
         ).join(
-            db.Player, db.PlayerPerformance.player_id == db.Player.id
-        ).where(db.Season.season == season).where(db.Player.first_name == first_name).where(db.Gameweek.gw_number == gameweek)
+            tbl.Player, tbl.PlayerPerformance.player_id == tbl.Player.id
+        ).where(tbl.Season.season == season).where(tbl.Player.first_name == first_name).where(tbl.Gameweek.gw_number == gameweek)
     ).one()
     return output
 

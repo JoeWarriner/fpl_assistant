@@ -1,19 +1,19 @@
 from typing import Any
 from sqlalchemy.dialects.postgresql import insert
-import database.database as db
-from database.database import dal
+import database.tables as tbl
+from database.data_access_layer import dal
 from sqlalchemy.orm import Session, DeclarativeBase
 
 
 COLS_TO_MATCH = {
-    db.Gameweek: [db.Gameweek.season_id, db.Gameweek.gw_number],
-    db.Player: [db.Player.fpl_id],
-    db.Team: [db.Team.fpl_id],
-    db.Season: [db.Season.start_year],
-    db.Position: [db.Position.fpl_id],
-    db.PlayerSeason: [db.PlayerSeason.fpl_id, db.PlayerSeason.player],
-    db.PlayerFixture: [db.PlayerFixture.fixture, db.PlayerFixture.player],
-    db.TeamSeason: [db.TeamSeason.team, db.TeamSeason.season]
+    tbl.Gameweek: [tbl.Gameweek.season_id, tbl.Gameweek.gw_number],
+    tbl.Player: [tbl.Player.fpl_id],
+    tbl.Team: [tbl.Team.fpl_id],
+    tbl.Season: [tbl.Season.start_year],
+    tbl.Position: [tbl.Position.fpl_id],
+    tbl.PlayerSeason: [tbl.PlayerSeason.fpl_id, tbl.PlayerSeason.player],
+    tbl.PlayerFixture: [tbl.PlayerFixture.fixture, tbl.PlayerFixture.player],
+    tbl.TeamSeason: [tbl.TeamSeason.team, tbl.TeamSeason.season]
 }
     
      

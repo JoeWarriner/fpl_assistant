@@ -1,8 +1,9 @@
 
-from sqlalchemy import create_engine, Column, Integer, Boolean, String, TIMESTAMP, ForeignKey, text, UniqueConstraint
-from sqlalchemy.orm import relationship, declarative_base, sessionmaker, Session
+from sqlalchemy import Column, Integer, Boolean, String, TIMESTAMP, ForeignKey,  UniqueConstraint
+from sqlalchemy.orm import relationship, DeclarativeBase
 
-Base = declarative_base()
+class Base(DeclarativeBase):
+    pass
 
 class Season(Base):
     __tablename__ = 'seasons'
@@ -187,74 +188,3 @@ class Position(Base):
 
     player_seasons = relationship("PlayerSeason", back_populates='position')
 
-
-MAIN_DB = 'postgresql+psycopg2://postgres@localhost/fantasyfootballassistant'
-TEST_DB = 'postgresql+psycopg2://postgres@localhost/fftest'
-
-
-
-# class GenericDataAccessLayer:
-
-#     def __init__(self, connection: str):
-#         self.connection = connection
-
-#     def __enter__(self) -> Session:
-#         self.engine = create_engine(TEST_DB)
-#         Base.metadata.create_all(self.engine)
-#         self.session = sessionmaker(bind = self.engine)()
-
-#     def __exit__(self, *args): 
-#         pass
-
-# class FFADataAccessLayer(GenericDataAccessLayer):
-#     def __init__(self):
-#         self.connection = 'postgresql+psycopg2://postgres@localhost/fantasyfootballassistant'
-
-# class TestDataAccessLayer(GenericDataAccessLayer):
-#     def __init__(self):
-#         self.connection = 'postgresql+psycopg2://postgres@localhost/fftest'
-    
-#     def __exit__(self, *args):
-#         Base.metadata.drop_all(self.engine)
-
-
-class DataAccessLayer:
-    session: Session
-
-    def __init__(self): 
-        self.engine = None
-        self.conn_string = 'postgresql+psycopg2://postgres@localhost/fantasyfootballassistant'
-
-    def connect(self): 
-        self.engine = create_engine(self.conn_string)
-        Base.metadata.create_all(self.engine)
-        self.Session = sessionmaker(bind=self.engine)
-    
-    def reset_tables(self):
-        Base.metadata.drop_all(self.engine)
-        Base.metadata.create_all(self.engine)
-
-
-
-dal = DataAccessLayer() 
-
-# with TestDataAccessLayer() as db:
-#     print(db.execute(text('SELECT * FROM player_seasons;')))
-#     db.commit()
-    
-# Create the engine and tables
-
-
-
-
-
-# class Database:
-#     metadata = MetaData()
-
-#     def __new__(cls):
-#         cls.engine = create_engine("postgresql+psycopg2://postgres@localhost/fantasyfootballassistant")
-#         fixtures_table(cls.metadata)
-#         cls.metadata.create_all(cls.engine)
-
-
-# Database()

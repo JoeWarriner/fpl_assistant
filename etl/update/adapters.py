@@ -4,37 +4,37 @@ from typing import Any, Optional
 from abc import ABC, abstractmethod
 from sqlalchemy import select
 from sqlalchemy.orm import Session, DeclarativeBase
-from database.database import dal
-import database.database as db
+from database.data_access_layer import dal
+import database.tables as tbl
 import etl.update.api as api
 
 
 def get_season(season_start_year = None):
 
     if not season_start_year:
-        return dal.session.scalar(select(db.Season.id).where(db.Season.is_current == True))
+        return dal.session.scalar(select(tbl.Season.id).where(tbl.Season.is_current == True))
     else:
-        return dal.session.scalar(select(db.Season.id).where(db.Season.start_year == season_start_year))
+        return dal.session.scalar(select(tbl.Season.id).where(tbl.Season.start_year == season_start_year))
 
 def get_fixture_id(fixture_fpl_id: int):
         return dal.session.scalar(
-                select(db.Fixture.id
-                     ).join(db.Fixture.season
-                              ).where(db.Fixture.fpl_id == fixture_fpl_id).where(db.Season.is_current == True)
+                select(tbl.Fixture.id
+                     ).join(tbl.Fixture.season
+                              ).where(tbl.Fixture.fpl_id == fixture_fpl_id).where(tbl.Season.is_current == True)
                         )
 
 def get_player_id(player_fpl_season_id: int):
         return dal.session.scalar(
-            select(db.PlayerSeason.player_id
-                   ).join(db.PlayerSeason.season
-                          ).where(db.PlayerSeason.fpl_id == player_fpl_season_id and db.Season.is_current == True)
+            select(tbl.PlayerSeason.player_id
+                   ).join(tbl.PlayerSeason.season
+                          ).where(tbl.PlayerSeason.fpl_id == player_fpl_season_id and tbl.Season.is_current == True)
                 )    
 
 def get_team(team_fpl_season_id: int):
     return dal.session.scalar(
-            select(db.Team.id
-                ).join(db.Team.team_seasons).join(db.TeamSeason.season
-                    ).where(db.TeamSeason.fpl_id == team_fpl_season_id and db.Season.is_current == True)
+            select(tbl.Team.id
+                ).join(tbl.Team.team_seasons).join(tbl.TeamSeason.season
+                    ).where(tbl.TeamSeason.fpl_id == team_fpl_season_id and tbl.Season.is_current == True)
         )
     
 class APITranformer:
@@ -83,7 +83,7 @@ class Adapter:
     
 class PlayerAdapter(Adapter):
     input: api.Player
-    table_ref = db.Player
+    table_ref = tbl.Player
 
     def transform(self):
         self.fpl_id = self.input.code
@@ -91,7 +91,7 @@ class PlayerAdapter(Adapter):
 
 class PositionAdapter(Adapter):
     input: api.Position
-    table_ref = db.Position
+    table_ref = tbl.Position
 
     def transform(self):
         self.fpl_id = self.input.id
@@ -101,20 +101,20 @@ class PositionAdapter(Adapter):
 
 class PlayerSeason(Adapter):
     input: api.Player
-    table_ref = db.PlayerSeason
+    table_ref = tbl.PlayerSeason
 
     def transform(self):
         self.fpl_id = self.input.id
         self.player_id = dal.session.scalar(
-            select(db.Player.id).where(db.Player.fpl_id == self.input.code)
+            select(tbl.Player.id).where(tbl.Player.fpl_id == self.input.code)
         )
         self.season_id = get_season()
-        self.position_id = dal.session.scalar(select(db.Position.id).where(db.Position.fpl_id == self.input.element_type))
+        self.position_id = dal.session.scalar(select(tbl.Position.id).where(tbl.Position.fpl_id == self.input.element_type))
         
 
 class TeamAdapter(Adapter):
     input: api.Team
-    table_ref = db.Team
+    table_ref = tbl.Team
 
     def transform(self):
         self.fpl_id = self.input.code
@@ -123,17 +123,17 @@ class TeamAdapter(Adapter):
 
 class TeamSeasonAdapter(Adapter):
     input: api.Team
-    table_ref = db.TeamSeason
+    table_ref = tbl.TeamSeason
 
     def transform(self):
         self.fpl_id = self.input.id
         self.season_id = get_season()
-        self.team_id = dal.session.scalar(select(db.Team.id).where(db.Team.fpl_id == self.input.code))
+        self.team_id = dal.session.scalar(select(tbl.Team.id).where(tbl.Team.fpl_id == self.input.code))
 
 
 class GameWeekAdapter(Adapter):
     input: api.GameWeek
-    table_ref = db.Gameweek
+    table_ref = tbl.Gameweek
 
     def transform(self):
         self.gw_number = self.input.id
@@ -143,10 +143,10 @@ class GameWeekAdapter(Adapter):
 
 class FixtureAdapter(Adapter):
     input: api.Fixture
-    table_ref = db.Fixture
+    table_ref = tbl.Fixture
 
     def transform(self):
-        self.gameweek_id = dal.session.scalar(select(db.Gameweek.id).where(db.Gameweek.gw_number  == self.input.event))
+        self.gameweek_id = dal.session.scalar(select(tbl.Gameweek.id).where(tbl.Gameweek.gw_number  == self.input.event))
         self.away_team_id = get_team(self.input.team_a)
         self.home_team_id = get_team(self.input.team_h)
         self.away_team_difficulty = self.input.team_a_difficulty
@@ -162,7 +162,7 @@ class FixtureAdapter(Adapter):
 
 class PlayerFixtureAdapter(Adapter):
     input: api.PlayerFixture
-    table_ref = db.PlayerFixture
+    table_ref = tbl.PlayerFixture
 
 
     def transform(self):
@@ -187,7 +187,7 @@ class PlayerFixtureAdapter(Adapter):
 
 class PlayerPerformanceAdapter(Adapter):
     input: api.PlayerPerformance
-    table_ref = db.PlayerPerformance
+    table_ref = tbl.PlayerPerformance
     
     def transform(self):
             self.fixture_id  = get_fixture_id(self.input.fixture)
@@ -201,11 +201,11 @@ class PlayerPerformanceAdapter(Adapter):
 
     def get_team_played_for(self, fixture_id):
         if self.input.was_home:
-            field = db.Fixture.home_team_id
+            field = tbl.Fixture.home_team_id
         else: 
-            field = db.Fixture.away_team_id
+            field = tbl.Fixture.away_team_id
 
-        return dal.session.scalar(select(field).where(db.Fixture.id == fixture_id))
+        return dal.session.scalar(select(field).where(tbl.Fixture.id == fixture_id))
 
             
 

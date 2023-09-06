@@ -1,9 +1,7 @@
 from typing import Any
 from abc import ABC, abstractmethod
 from pydantic import BaseModel
-import sqlalchemy
 from etl.update.utils.paths import ProjectPaths
-from database.database import dal
 import pandas as pd
 
 class Extracter(ABC):

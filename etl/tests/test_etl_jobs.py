@@ -12,17 +12,19 @@ from etl.seed_db.data_files import GameWeekTransformer
 from etl.update.extracters import DataTableExtracter
 from etl.update.loaders import DBLoader
 
-import database.database as db
+import database.tables as tbl
+from database.data_access_layer import dal
+
 from sqlalchemy import select
 
 def test_gameweek_etl(insert_seasons):
     gameweek = DataImportPipeline(
         DataTableExtracter(['2021-22','2022-23'], Path('gws', 'merged_gw.csv'), pathlib=PathsForTests),
         GameWeekTransformer(),
-        DBLoader(db.Gameweek)
+        DBLoader(tbl.Gameweek)
     )
     gameweek.run()
 
-    gameweeks = db.dal.session.execute(select(db.Gameweek)).all()
+    gameweeks = dal.session.execute(select(tbl.Gameweek)).all()
     assert len(gameweeks) == 3
 
