@@ -8,16 +8,15 @@ from sqlalchemy.orm import Session
 import etl.jobs.extractors.extractors as extract
 from etl.jobs.extractors.extractors import Extractor
 from etl.jobs.transformers.base_transformer import Transformer
+from etl.jobs.loaders.base_loader import Loader
 import etl.update.api as api
 import etl.jobs.transformers.api_transformers as tform
-import etl.update.loaders as load
+import etl.jobs.loaders.loaders as load
 from etl.utils.file_handlers import ProjectFiles
 from database.tables import Gameweek
 
 
-class Loader: 
-    def load():
-        raise NotImplementedError
+
 
 
 class Task(ABC):
@@ -44,7 +43,7 @@ class DataImportPipeline(Task):
         if self.transformer:
             data = self.transformer.run(data) 
         for record in data:
-            self.loader.load(record)
+            self.loader.run(record)
     
     def __repr__(self) -> str:
         return f'Import job for table: {self.loader.table}.'

@@ -6,7 +6,7 @@ from etl.update.update_pipeline import PipelineOrchestrator, DataImportPipeline
 import etl.update.api as api
 import etl.jobs.extractors.extractors as extractors
 import etl.jobs.transformers.api_transformers as api_transformers
-import etl.update.loaders as loaders
+import etl.jobs.loaders.loaders as loaders
 import etl.update.tests.test_data.test_api_dicts as test_data
 from etl.tests.utils import ProjectFilesForTests
 from sqlalchemy import select, insert

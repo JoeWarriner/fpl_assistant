@@ -3,7 +3,7 @@ import database.tables as tbl
 from database.data_access_layer import dal
 import etl.seed_db.seed as seed
 import etl.jobs.transformers.data_table_transformers as tform
-from etl.update.loaders import DBLoader
+from etl.jobs.loaders.loaders import DBLoader
 import etl.update.api as api
 from etl.jobs.extractors.extractors import DataTableExtractor, APIExtractor
 from etl.update.update_pipeline import PipelineOrchestrator, DataImportPipeline

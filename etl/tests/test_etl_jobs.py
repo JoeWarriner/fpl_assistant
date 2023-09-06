@@ -10,7 +10,7 @@ from pathlib import Path
 
 from etl.jobs.transformers.data_table_transformers import GameWeekTransformer
 from etl.jobs.extractors.extractors import DataTableExtractor
-from etl.update.loaders import DBLoader
+from etl.jobs.loaders.loaders import DBLoader
 
 import database.tables as tbl
 from database.data_access_layer import dal
