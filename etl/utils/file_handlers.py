@@ -1,4 +1,4 @@
-from etl.update.utils.paths import ProjectPaths
+from etl.utils.paths import ProjectPaths
 import json
 import os
 

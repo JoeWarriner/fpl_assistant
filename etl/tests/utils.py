@@ -1,5 +1,5 @@
-from etl.update.utils.paths import ProjectPaths
-from etl.update.utils.file_handlers import ProjectFiles
+from etl.utils.paths import ProjectPaths
+from etl.utils.file_handlers import ProjectFiles
 
 class PathsForTests(ProjectPaths): 
     

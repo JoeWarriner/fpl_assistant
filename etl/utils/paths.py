@@ -7,7 +7,7 @@ class ProjectPaths:
     @classmethod
     @property
     def project_directory(cls) -> Path:
-        return Path(__file__).parents[3]
+        return Path(__file__).parents[2]
     
     @classmethod
     @property

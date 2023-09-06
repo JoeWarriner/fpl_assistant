@@ -9,7 +9,7 @@ import etl.update.extracters as extract
 import etl.update.api as api
 import etl.update.adapters as tform
 import etl.update.loaders as load
-from etl.update.utils.file_handlers import ProjectFiles
+from etl.utils.file_handlers import ProjectFiles
 from database.tables import Gameweek
 
 

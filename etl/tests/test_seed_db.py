@@ -8,7 +8,7 @@ import etl.update.api as api
 from etl.update.extracters import DataTableExtracter, APIExtracter
 from etl.update.update_pipeline import PipelineOrchestrator, DataImportPipeline
 from etl.update.adapters import APITranformer, PositionAdapter
-from etl.update.utils.file_handlers import ProjectFiles
+from etl.utils.file_handlers import ProjectFiles
 from etl.update.extract_api_data import APIDownloader
 from etl.tests.utils import PathsForTests
 from pathlib import Path

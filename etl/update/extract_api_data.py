@@ -1,6 +1,6 @@
 import requests
 from pathlib import Path
-from etl.update.utils.paths import ProjectPaths
+from etl.utils.paths import ProjectPaths
 from datetime import datetime, date
 import shutil
 import json

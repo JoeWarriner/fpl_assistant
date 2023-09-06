@@ -1,7 +1,7 @@
 from typing import Any
 from abc import ABC, abstractmethod
 from pydantic import BaseModel
-from etl.update.utils.paths import ProjectPaths
+from etl.utils.paths import ProjectPaths
 import pandas as pd
 
 class Extracter(ABC):
