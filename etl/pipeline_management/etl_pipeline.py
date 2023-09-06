@@ -5,10 +5,11 @@ from etl.jobs.loaders.base_loader import Loader
 
 from etl.pipeline_management.base_pipeline import Pipeline
 
+
 class DataImportPipeline(Pipeline):
     task_serializer = SimpleSerializer
 
-    def __init__(self, extractor: Extractor, transformer: Transformer, loader: Loader ):
+    def __init__(self, extractor: Extractor, transformer: Transformer, loader: Loader):
         super().__init__()
         self.extractor = extractor
         self.transformer = transformer

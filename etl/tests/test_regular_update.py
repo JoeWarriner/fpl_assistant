@@ -211,7 +211,7 @@ def test_player_season_import(import_player_seasons):
 @pytest.fixture
 def import_gameweeks(import_player_seasons):
     orchestrator = import_player_seasons
-    orchestrator.add_task(regular_import.gameweeks)
+    orchestrator.add_task(regular_import.gameweeks, predecessors = {regular_import.seasons})
     return orchestrator
 
 def gamweek_test_query(gw_number, season):

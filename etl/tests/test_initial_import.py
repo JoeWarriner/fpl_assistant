@@ -14,15 +14,21 @@ from etl.utils.file_handlers import ProjectFiles
 from etl.jobs.extractors.api.api_download import APIDownloader
 from etl.tests.utils import PathsForTests
 from pathlib import Path
+from etl.imports.initial_import import  InitialImport
 
+InitialImport.pathlib = PathsForTests
+InitialImport.seasons_to_import =  [
+        '2021-22',
+        '2022-23'
+    ]
+initial_import = InitialImport()
 
 from sqlalchemy import select
 from sqlalchemy.orm import aliased
 
-SEASONS_TO_IMPORT = [
-        '2021-22',
-        '2022-23'
-    ]
+
+
+
 
 @pytest.fixture
 def database():
@@ -38,69 +44,13 @@ def database():
 
 
 
-seasons = DataImportPipeline(
-        extractor=seasons_extractor.CreateSeasonsFromList(SEASONS_TO_IMPORT),
-        transformer=None,
-        loader= DBLoader(tbl.Season)
-)
-
-players = DataImportPipeline(
-        extractor = DataTableExtractor(SEASONS_TO_IMPORT, 'players_raw.csv', pathlib = PathsForTests),
-        transformer = tform.PlayerTransformer(),
-        loader =  DBLoader(tbl.Player)
-    )
-
-teams = DataImportPipeline(
-    extractor= DataTableExtractor(SEASONS_TO_IMPORT, 'teams.csv', pathlib = PathsForTests),
-    transformer= tform.TeamTransformer(),
-    loader = DBLoader(tbl.Team)
-)
-
-team_seasons = DataImportPipeline(
-    extractor= DataTableExtractor(SEASONS_TO_IMPORT, 'players_raw.csv', pathlib = PathsForTests),
-    transformer= tform.TeamSeasonTransformer(),
-    loader=DBLoader(tbl.TeamSeason)
-)
-
-positions = DataImportPipeline(
-    extractor = APIExtractor(api_models.Position, ProjectFiles.positions_json),
-    transformer = APITransformer(PositionAdapter),
-    loader = DBLoader(tbl.Position)
-)
-
-player_seasons = DataImportPipeline(
-    extractor= DataTableExtractor(SEASONS_TO_IMPORT, 'players_raw.csv', pathlib = PathsForTests),
-    transformer=tform.PlayerSeasonTransformer(),
-    loader = DBLoader(tbl.PlayerSeason)
-)
-
-gameweeks = DataImportPipeline(
-    extractor = DataTableExtractor(SEASONS_TO_IMPORT, Path('gws', 'merged_gw.csv'), pathlib = PathsForTests),
-    transformer= tform.GameWeekTransformer(),
-    loader = DBLoader(tbl.Gameweek)
-)
-
-fixtures = DataImportPipeline(
-    extractor = DataTableExtractor(SEASONS_TO_IMPORT, 'fixtures.csv', pathlib = PathsForTests),
-    transformer=tform.FixturesTransformer(),
-    loader=DBLoader(tbl.Fixture)
-)
-
-player_performances = DataImportPipeline(
-    extractor=DataTableExtractor(SEASONS_TO_IMPORT, Path('gws', 'merged_gw.csv'), pathlib = PathsForTests),
-    transformer= tform.PlayerPerformanceTransformer(),
-    loader= DBLoader(tbl.PlayerPerformance)
-)
-
-api_download = APIDownloader()
-
 
 
 
 @pytest.fixture
 def seasons_import(database):
     orchestrator = Pipeline()
-    orchestrator.add_task(seasons)
+    orchestrator.add_task(initial_import.seasons)
     return orchestrator
 
 
@@ -109,13 +59,13 @@ def test_seasons_import(seasons_import):
     test_season = dal.session.scalar(select(tbl.Season).where(tbl.Season.start_year == 2022))
     assert test_season.season == '2022-23'
     all_seasons = dal.session.execute(select(tbl.Season)).all()
-    assert len(all_seasons)  == len(SEASONS_TO_IMPORT)
+    assert len(all_seasons)  == 2
 
 
 @pytest.fixture
 def players_import(seasons_import: Pipeline):
     orchestrator = seasons_import
-    orchestrator.add_task(players, predecessors={seasons})
+    orchestrator.add_task(initial_import.players, predecessors={initial_import.seasons})
     return orchestrator
 
 def test_players_import(players_import):
@@ -130,7 +80,7 @@ def test_players_import(players_import):
 @pytest.fixture
 def teams_import(players_import: Pipeline):
     orchestrator = players_import
-    orchestrator.add_task(teams, predecessors={seasons})
+    orchestrator.add_task(initial_import.teams, predecessors={initial_import.seasons})
     return orchestrator
 
 def test_teams_import(teams_import):
@@ -144,7 +94,7 @@ def test_teams_import(teams_import):
 @pytest.fixture
 def team_seasons_import(teams_import:Pipeline):
     orchestrator = teams_import
-    orchestrator.add_task(team_seasons, predecessors={teams})
+    orchestrator.add_task(initial_import.team_seasons, predecessors={initial_import.teams})
     return orchestrator
 
 def test_team_seasons_import(team_seasons_import):
@@ -156,8 +106,8 @@ def test_team_seasons_import(team_seasons_import):
 @pytest.fixture
 def positions_import(team_seasons_import: Pipeline):
     orchestrator = team_seasons_import
-    orchestrator.add_task(api_download)
-    orchestrator.add_task(positions, predecessors={api_download})
+    orchestrator.add_task(initial_import.api_download)
+    orchestrator.add_task(initial_import.positions, predecessors={initial_import.api_download})
     return orchestrator
     
 def test_positions_import(positions_import):
@@ -169,7 +119,7 @@ def test_positions_import(positions_import):
 @pytest.fixture
 def player_seasons_import(positions_import: Pipeline):
     orchestrator = positions_import
-    orchestrator.add_task(player_seasons, predecessors={players, seasons, positions})
+    orchestrator.add_task(initial_import.player_seasons, predecessors={initial_import.players, initial_import.seasons, initial_import.positions})
     return orchestrator
 
 def test_player_seasons_import(player_seasons_import):
@@ -181,7 +131,7 @@ def test_player_seasons_import(player_seasons_import):
 @pytest.fixture
 def gameweeks_import(player_seasons_import: Pipeline):
     orchestrator = player_seasons_import
-    orchestrator.add_task(gameweeks, predecessors={seasons})
+    orchestrator.add_task(initial_import.gameweeks, predecessors={initial_import.seasons})
     return orchestrator
 
 def test_gameweeks_import(gameweeks_import):
@@ -193,7 +143,7 @@ def test_gameweeks_import(gameweeks_import):
 @pytest.fixture
 def fixtures_import(gameweeks_import: Pipeline):
     orchestrator = gameweeks_import
-    orchestrator.add_task(fixtures, predecessors={gameweeks, seasons, team_seasons})
+    orchestrator.add_task(initial_import.fixtures, predecessors={initial_import.gameweeks, initial_import.seasons, initial_import.team_seasons})
     return orchestrator
 
 def test_fixtures_import(fixtures_import):
@@ -232,7 +182,7 @@ def test_fixtures_import(fixtures_import):
 @pytest.fixture
 def player_performances_import(fixtures_import: Pipeline):
     orchestrator = fixtures_import
-    orchestrator.add_task(player_performances, predecessors={fixtures, player_seasons})
+    orchestrator.add_task(initial_import.player_performances, predecessors={initial_import.fixtures, initial_import.player_seasons})
     return orchestrator
 
 
