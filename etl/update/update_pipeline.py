@@ -5,17 +5,14 @@ from abc import ABC, abstractmethod
 from copy import copy
 from sqlalchemy.orm import Session
 
-import etl.jobs.extractors.extracters as extract
+import etl.jobs.extractors.extractors as extract
+from etl.jobs.extractors.extractors import Extractor
 import etl.update.api as api
 import etl.update.adapters as tform
 import etl.update.loaders as load
 from etl.utils.file_handlers import ProjectFiles
 from database.tables import Gameweek
 
-
-class Extracter(Protocol):
-   def extract():
-       raise NotImplementedError
 
 class Transformer:
     def __init__():
@@ -38,17 +35,17 @@ class Task(ABC):
 class DataImportPipeline(Task):
     def __init__(
         self,
-        extracter: Extracter,
+        extractor: Extractor,
         transformer: type[Transformer],
         loader: Loader,
     ):
-        self.extracter = extracter
+        self.extractor = extractor
         self.transformer = transformer
         self.loader = loader
 
     def run(self):
 
-        data = self.extracter.extract()
+        data = self.extractor.extract()
         
         if self.transformer:
             data = self.transformer.convert(data) 
@@ -137,16 +134,11 @@ if __name__ == "__main__":
         orchestrator = PipelineOrchestrator()
 
         gw_import = DataImportPipeline(
-            extracter = extract.APIExtractor(api.GameWeek, ProjectFiles.gameweeks_json), 
+            extractor = extract.APIExtractor(api.GameWeek, ProjectFiles.gameweeks_json), 
             transformer = tform.GameWeekAdapter(session),
             loader = load.DictionaryDBLoader(Gameweek, session)
         )
 
-        # fixture_import = DataImportPipeline(
-        #     extracter = extract.Fixture, 
-        #     transformer = tform.GameWeekAdapter(Session),
-        #     loader = load.DBLoader()
-        # )
 
 
         orchestrator.add_task(gw_import)
