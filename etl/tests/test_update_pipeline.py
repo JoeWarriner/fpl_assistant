@@ -2,12 +2,12 @@ import pytest
 from datetime import datetime
 import database.tables as tbl 
 from database.data_access_layer import dal
-from etl.update.update_pipeline import PipelineOrchestrator, DataImportPipeline
+from etl.pipeline.etl_pipeline import  DataImportPipeline
+from etl.pipeline.base_pipeline import Pipeline
 import etl.jobs.api as api
 import etl.jobs.extractors.api_extractors as extractor
 import etl.jobs.transformers.api_transformers as api_transformers
 import etl.jobs.loaders.loaders as loaders
-import etl.update.tests.test_data.test_api_dicts as test_data
 from etl.tests.utils import ProjectFilesForTests
 from sqlalchemy import select, insert
 from sqlalchemy.orm import aliased
@@ -100,7 +100,7 @@ def insert_season(database):
 
 @pytest.fixture
 def import_players(insert_season):
-    orchestrator = PipelineOrchestrator()
+    orchestrator = Pipeline()
     orchestrator.add_task(players)
     return orchestrator
 

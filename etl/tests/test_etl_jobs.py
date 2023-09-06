@@ -4,7 +4,7 @@ from etl.tests.db_fixtures import insert_seasons, database
 from etl.tests.utils import PathsForTests
 
 
-from etl.update.update_pipeline import PipelineOrchestrator, DataImportPipeline
+from etl.pipeline.etl_pipeline import  DataImportPipeline
 from pathlib import Path
 
 

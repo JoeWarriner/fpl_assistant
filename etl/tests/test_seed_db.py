@@ -7,7 +7,8 @@ from etl.jobs.loaders.loaders import DBLoader
 import etl.jobs.api as api
 from etl.jobs.extractors.data_table_extractor import DataTableExtractor
 from etl.jobs.extractors.api_extractors import APIExtractor
-from etl.update.update_pipeline import PipelineOrchestrator, DataImportPipeline
+from etl.pipeline.base_pipeline import Pipeline
+from etl.pipeline.etl_pipeline import DataImportPipeline
 from etl.jobs.transformers.api_transformers import APITransformer, PositionAdapter
 from etl.utils.file_handlers import ProjectFiles
 from etl.jobs.extract_api_data import APIDownloader
@@ -113,7 +114,7 @@ api_download = APIDownloader()
 
 @pytest.fixture
 def seasons_import(database):
-    orchestrator = PipelineOrchestrator()
+    orchestrator = Pipeline()
     orchestrator.add_task(seasons)
     return orchestrator
 
@@ -127,7 +128,7 @@ def test_seasons_import(seasons_import):
 
 
 @pytest.fixture
-def players_import(seasons_import: PipelineOrchestrator):
+def players_import(seasons_import: Pipeline):
     orchestrator = seasons_import
     orchestrator.add_task(players, predecessors={seasons})
     return orchestrator
@@ -142,7 +143,7 @@ def test_players_import(players_import):
 
 
 @pytest.fixture
-def teams_import(players_import: PipelineOrchestrator):
+def teams_import(players_import: Pipeline):
     orchestrator = players_import
     orchestrator.add_task(teams, predecessors={seasons})
     return orchestrator
@@ -156,7 +157,7 @@ def test_teams_import(teams_import):
     assert len(all_teams) == 11
 
 @pytest.fixture
-def team_seasons_import(teams_import:PipelineOrchestrator):
+def team_seasons_import(teams_import:Pipeline):
     orchestrator = teams_import
     orchestrator.add_task(team_seasons, predecessors={teams})
     return orchestrator
@@ -168,7 +169,7 @@ def test_team_seasons_import(team_seasons_import):
 
 
 @pytest.fixture
-def positions_import(team_seasons_import: PipelineOrchestrator):
+def positions_import(team_seasons_import: Pipeline):
     orchestrator = team_seasons_import
     orchestrator.add_task(api_download)
     orchestrator.add_task(positions, predecessors={api_download})
@@ -181,7 +182,7 @@ def test_positions_import(positions_import):
 
 
 @pytest.fixture
-def player_seasons_import(positions_import: PipelineOrchestrator):
+def player_seasons_import(positions_import: Pipeline):
     orchestrator = positions_import
     orchestrator.add_task(player_seasons, predecessors={players, seasons, positions})
     return orchestrator
@@ -193,7 +194,7 @@ def test_player_seasons_import(player_seasons_import):
 
 
 @pytest.fixture
-def gameweeks_import(player_seasons_import: PipelineOrchestrator):
+def gameweeks_import(player_seasons_import: Pipeline):
     orchestrator = player_seasons_import
     orchestrator.add_task(gameweeks, predecessors={seasons})
     return orchestrator
@@ -205,7 +206,7 @@ def test_gameweeks_import(gameweeks_import):
 
 
 @pytest.fixture
-def fixtures_import(gameweeks_import: PipelineOrchestrator):
+def fixtures_import(gameweeks_import: Pipeline):
     orchestrator = gameweeks_import
     orchestrator.add_task(fixtures, predecessors={gameweeks, seasons, team_seasons})
     return orchestrator
@@ -244,7 +245,7 @@ def test_fixtures_import(fixtures_import):
 
 
 @pytest.fixture
-def player_performances_import(fixtures_import: PipelineOrchestrator):
+def player_performances_import(fixtures_import: Pipeline):
     orchestrator = fixtures_import
     orchestrator.add_task(player_performances, predecessors={fixtures, player_seasons})
     return orchestrator
