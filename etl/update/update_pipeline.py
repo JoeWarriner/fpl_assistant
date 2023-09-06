@@ -7,19 +7,13 @@ from sqlalchemy.orm import Session
 
 import etl.jobs.extractors.extractors as extract
 from etl.jobs.extractors.extractors import Extractor
+from etl.jobs.transformers.base_transformer import Transformer
 import etl.update.api as api
-import etl.jobs.transformers.adapters as tform
+import etl.jobs.transformers.api_transformers as tform
 import etl.update.loaders as load
 from etl.utils.file_handlers import ProjectFiles
 from database.tables import Gameweek
 
-
-class Transformer:
-    def __init__():
-        pass
-
-    def convert():
-        raise NotImplementedError
 
 class Loader: 
     def load():
@@ -48,7 +42,7 @@ class DataImportPipeline(Task):
         data = self.extractor.extract()
         
         if self.transformer:
-            data = self.transformer.convert(data) 
+            data = self.transformer.run(data) 
         for record in data:
             self.loader.load(record)
     

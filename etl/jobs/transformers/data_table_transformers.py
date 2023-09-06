@@ -4,7 +4,7 @@ from datetime import datetime
 import pandas as pd
 import sqlalchemy
 
-class DataFileTransformer:
+class DataTableTransformer:
     dataframe: pd.DataFrame
 
     def __init__(self):
@@ -25,13 +25,13 @@ class DataFileTransformer:
             ).drop(columns = ['season'])
         return data
 
-    def convert(self, data: pd.DataFrame):
+    def run(self, data: pd.DataFrame):
         data = self.convert_season_ids(data)
         dataframe = self.do_transformations(data)            
         return dataframe.to_dict(orient='records')
 
 
-class PlayerTransformer(DataFileTransformer):
+class PlayerTransformer(DataTableTransformer):
     def do_transformations(self, data: pd.DataFrame):
         data =  data[
             ['first_name', 'second_name', 'code']
@@ -39,7 +39,7 @@ class PlayerTransformer(DataFileTransformer):
                     ).rename(columns = {'code':'fpl_id'})
         return data
 
-class TeamTransformer(DataFileTransformer):
+class TeamTransformer(DataTableTransformer):
     def do_transformations(self, data: pd.DataFrame) -> pd.DataFrame:
         # The following teams only appeared in seasons where summarised team data isn't available.
         # Team codes derived manually from players in the squad that season.
@@ -61,7 +61,7 @@ class TeamTransformer(DataFileTransformer):
         return data
     
 
-class TeamSeasonTransformer(DataFileTransformer):
+class TeamSeasonTransformer(DataTableTransformer):
     def do_transformations(self, data: pd.DataFrame) -> pd.DataFrame:
         teams_query = f'SELECT id as team, fpl_id as fpl_perm_id FROM teams' 
         teams = pd.DataFrame(dal.session.execute(sqlalchemy.text(teams_query)))
@@ -79,7 +79,7 @@ class TeamSeasonTransformer(DataFileTransformer):
         return data
 
 
-class PlayerSeasonTransformer(DataFileTransformer):
+class PlayerSeasonTransformer(DataTableTransformer):
     def do_transformations(self, data: pd.DataFrame) -> pd.DataFrame:
         positions_query = f'SELECT id as position, fpl_id as position_fpl_id FROM positions;'
         positions = pd.DataFrame(dal.session.execute(sqlalchemy.text(positions_query)))
@@ -96,7 +96,7 @@ class PlayerSeasonTransformer(DataFileTransformer):
         
         return player_data
 
-class GameWeekTransformer(DataFileTransformer):
+class GameWeekTransformer(DataTableTransformer):
     def do_transformations(self, data: pd.DataFrame) -> pd.DataFrame:
         gameweek_data = data[['kickoff_time', 'GW', 'season_id']]
         gameweek_data = gameweek_data.groupby(['GW','season_id']
@@ -113,7 +113,7 @@ class GameWeekTransformer(DataFileTransformer):
         return gameweek_data
     
 
-class FixturesTransformer(DataFileTransformer):
+class FixturesTransformer(DataTableTransformer):
     def do_transformations(self, data: pd.DataFrame) -> pd.DataFrame:
 
         fixtures_columns = ['event', 'finished', 'started', 'team_a', 'team_h', 'kickoff_time', 'id', 'team_a_score', 'team_h_score', 'team_a_difficulty', 'team_h_difficulty', 'season_id', 'code']
@@ -166,7 +166,7 @@ class FixturesTransformer(DataFileTransformer):
         return fixtures_data
     
 
-class PlayerPerformanceTransformer(DataFileTransformer):
+class PlayerPerformanceTransformer(DataTableTransformer):
     def do_transformations(self, data: pd.DataFrame) -> pd.DataFrame:
 
         fixtures_query = 'SELECT id as fixture, season_id, fpl_id as fpl_fixture_id, away_team_id, home_team_id from fixtures;'

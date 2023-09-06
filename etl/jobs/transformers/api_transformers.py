@@ -8,40 +8,11 @@ from database.data_access_layer import dal
 import database.tables as tbl
 import etl.update.api as api
 
-
-def get_season(season_start_year = None):
-
-    if not season_start_year:
-        return dal.session.scalar(select(tbl.Season.id).where(tbl.Season.is_current == True))
-    else:
-        return dal.session.scalar(select(tbl.Season.id).where(tbl.Season.start_year == season_start_year))
-
-def get_fixture_id(fixture_fpl_id: int):
-        return dal.session.scalar(
-                select(tbl.Fixture.id
-                     ).join(tbl.Fixture.season
-                              ).where(tbl.Fixture.fpl_id == fixture_fpl_id).where(tbl.Season.is_current == True)
-                        )
-
-def get_player_id(player_fpl_season_id: int):
-        return dal.session.scalar(
-            select(tbl.PlayerSeason.player_id
-                   ).join(tbl.PlayerSeason.season
-                          ).where(tbl.PlayerSeason.fpl_id == player_fpl_season_id and tbl.Season.is_current == True)
-                )    
-
-def get_team(team_fpl_season_id: int):
-    return dal.session.scalar(
-            select(tbl.Team.id
-                ).join(tbl.Team.team_seasons).join(tbl.TeamSeason.season
-                    ).where(tbl.TeamSeason.fpl_id == team_fpl_season_id and tbl.Season.is_current == True)
-        )
-    
-class APITranformer:
+class APITransformer:
     def __init__(self, adapter: type[Adapter]):
         self.adapter = adapter
     
-    def convert(self, input_list):
+    def run(self, input_list):
         adapter = self.adapter()
         output = [adapter.convert(input) for input in input_list]
         return output
@@ -207,13 +178,39 @@ class PlayerPerformanceAdapter(Adapter):
 
         return dal.session.scalar(select(field).where(tbl.Fixture.id == fixture_id))
 
-            
 
-            
+## DB FUNCTIONS:
+ 
+def get_season(season_start_year = None):
 
-    
+    if not season_start_year:
+        return dal.session.scalar(select(tbl.Season.id).where(tbl.Season.is_current == True))
+    else:
+        return dal.session.scalar(select(tbl.Season.id).where(tbl.Season.start_year == season_start_year))
 
-    
+def get_fixture_id(fixture_fpl_id: int):
+        return dal.session.scalar(
+                select(tbl.Fixture.id
+                     ).join(tbl.Fixture.season
+                              ).where(tbl.Fixture.fpl_id == fixture_fpl_id).where(tbl.Season.is_current == True)
+                        )
+
+def get_player_id(player_fpl_season_id: int):
+        return dal.session.scalar(
+            select(tbl.PlayerSeason.player_id
+                   ).join(tbl.PlayerSeason.season
+                          ).where(tbl.PlayerSeason.fpl_id == player_fpl_season_id and tbl.Season.is_current == True)
+                )    
+
+def get_team(team_fpl_season_id: int):
+    return dal.session.scalar(
+            select(tbl.Team.id
+                ).join(tbl.Team.team_seasons).join(tbl.TeamSeason.season
+                    ).where(tbl.TeamSeason.fpl_id == team_fpl_season_id and tbl.Season.is_current == True)
+        )
+
+
+
         
 
 

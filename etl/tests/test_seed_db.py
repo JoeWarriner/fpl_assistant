@@ -2,12 +2,12 @@ import pytest
 import database.tables as tbl
 from database.data_access_layer import dal
 import etl.seed_db.seed as seed
-import etl.jobs.transformers.data_files as tform
+import etl.jobs.transformers.data_table_transformers as tform
 from etl.update.loaders import DBLoader
 import etl.update.api as api
 from etl.jobs.extractors.extractors import DataTableExtractor, APIExtractor
 from etl.update.update_pipeline import PipelineOrchestrator, DataImportPipeline
-from etl.jobs.transformers.adapters import APITranformer, PositionAdapter
+from etl.jobs.transformers.api_transformers import APITransformer, PositionAdapter
 from etl.utils.file_handlers import ProjectFiles
 from etl.update.extract_api_data import APIDownloader
 from etl.tests.utils import PathsForTests
@@ -77,7 +77,7 @@ team_seasons = DataImportPipeline(
 
 positions = DataImportPipeline(
     extractor = APIExtractor(api.Position, ProjectFiles.positions_json),
-    transformer = APITranformer(PositionAdapter),
+    transformer = APITransformer(PositionAdapter),
     loader = DBLoader(tbl.Position)
 )
 

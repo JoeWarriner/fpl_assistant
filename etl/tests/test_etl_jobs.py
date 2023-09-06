@@ -8,7 +8,7 @@ from etl.update.update_pipeline import PipelineOrchestrator, DataImportPipeline
 from pathlib import Path
 
 
-from etl.jobs.transformers.data_files import GameWeekTransformer
+from etl.jobs.transformers.data_table_transformers import GameWeekTransformer
 from etl.jobs.extractors.extractors import DataTableExtractor
 from etl.update.loaders import DBLoader
 

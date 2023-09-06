@@ -1,6 +1,6 @@
 import pytest
 from datetime import datetime
-import etl.jobs.transformers.data_files as tform
+import etl.jobs.transformers.data_table_transformers as tform
 from etl.tests.test_seed_db import database
 from sqlalchemy.dialects.postgresql import insert
 import database.tables as tbl
