@@ -10,7 +10,7 @@ import etl.update.api as api
 import etl.update.adapters as tform
 import etl.update.loaders as load
 from etl.update.utils.file_handlers import ProjectFiles
-from etl.update.database import Gameweek
+from database.database import Gameweek
 
 
 class Extracter(Protocol):

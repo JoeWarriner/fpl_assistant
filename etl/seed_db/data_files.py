@@ -1,5 +1,5 @@
 from typing import Callable
-from etl.update.database import dal
+from database.database import dal
 from datetime import datetime
 import pandas as pd
 import sqlalchemy

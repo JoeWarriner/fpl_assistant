@@ -1,6 +1,6 @@
 import pytest
 from datetime import datetime
-import etl.update.database as db 
+import database.database as db 
 from etl.update.update_pipeline import PipelineOrchestrator, DataImportPipeline
 import etl.update.api as api
 import etl.update.extracters as extracters

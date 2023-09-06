@@ -1,5 +1,5 @@
 import pytest
-import etl.update.database as db 
+import database.database as db 
 from sqlalchemy.dialects.postgresql import insert
 
 

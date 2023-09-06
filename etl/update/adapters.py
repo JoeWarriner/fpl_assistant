@@ -4,8 +4,8 @@ from typing import Any, Optional
 from abc import ABC, abstractmethod
 from sqlalchemy import select
 from sqlalchemy.orm import Session, DeclarativeBase
-from etl.update.database import dal
-import etl.update.database as db
+from database.database import dal
+import database.database as db
 import etl.update.api as api
 
 

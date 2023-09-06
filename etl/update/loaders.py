@@ -1,7 +1,7 @@
 from typing import Any
 from sqlalchemy.dialects.postgresql import insert
-import etl.update.database as db
-from etl.update.database import dal
+import database.database as db
+from database.database import dal
 from sqlalchemy.orm import Session, DeclarativeBase
 
 

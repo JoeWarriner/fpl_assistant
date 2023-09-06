@@ -3,9 +3,9 @@ from datetime import datetime
 import etl.seed_db.data_files as tform
 from etl.tests.test_seed_db import database
 from sqlalchemy.dialects.postgresql import insert
-import etl.update.database as db
+import database.database as db
 import pandas as pd
-from etl.update.database import dal
+from database.database import dal
 
 
 

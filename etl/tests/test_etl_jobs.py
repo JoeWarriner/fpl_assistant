@@ -12,7 +12,7 @@ from etl.seed_db.data_files import GameWeekTransformer
 from etl.update.extracters import DataTableExtracter
 from etl.update.loaders import DBLoader
 
-import etl.update.database as db
+import database.database as db
 from sqlalchemy import select
 
 def test_gameweek_etl(insert_seasons):

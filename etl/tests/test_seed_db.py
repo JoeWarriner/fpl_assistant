@@ -1,5 +1,5 @@
 import pytest
-import etl.update.database as db
+import database.database as db
 import etl.seed_db.seed as seed
 import etl.seed_db.data_files as tform
 from etl.update.loaders import DBLoader
