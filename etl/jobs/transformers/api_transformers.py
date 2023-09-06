@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, DeclarativeBase
 from database.data_access_layer import dal
 import database.tables as tbl
-import etl.update.api as api
+import etl.jobs.api as api
 
 class APITransformer:
     def __init__(self, adapter: type[Adapter]):

@@ -4,13 +4,13 @@ from database.data_access_layer import dal
 import etl.jobs.extractors.create_seasons as create_seasons
 import etl.jobs.transformers.data_table_transformers as tform
 from etl.jobs.loaders.loaders import DBLoader
-import etl.update.api as api
+import etl.jobs.api as api
 from etl.jobs.extractors.data_table_extractor import DataTableExtractor
 from etl.jobs.extractors.api_extractors import APIExtractor
 from etl.update.update_pipeline import PipelineOrchestrator, DataImportPipeline
 from etl.jobs.transformers.api_transformers import APITransformer, PositionAdapter
 from etl.utils.file_handlers import ProjectFiles
-from etl.update.extract_api_data import APIDownloader
+from etl.jobs.extract_api_data import APIDownloader
 from etl.tests.utils import PathsForTests
 from pathlib import Path
 

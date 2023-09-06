@@ -9,7 +9,7 @@ import etl.jobs.extractors.data_table_extractor as extract
 from etl.jobs.extractors.data_table_extractor import Extractor
 from etl.jobs.transformers.base_transformer import Transformer
 from etl.jobs.loaders.base_loader import Loader
-import etl.update.api as api
+import etl.jobs.api as api
 import etl.jobs.transformers.api_transformers as tform
 import etl.jobs.loaders.loaders as load
 from etl.utils.file_handlers import ProjectFiles

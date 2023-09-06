@@ -3,7 +3,7 @@ from datetime import datetime
 import database.tables as tbl 
 from database.data_access_layer import dal
 from etl.update.update_pipeline import PipelineOrchestrator, DataImportPipeline
-import etl.update.api as api
+import etl.jobs.api as api
 import etl.jobs.extractors.api_extractors as extractor
 import etl.jobs.transformers.api_transformers as api_transformers
 import etl.jobs.loaders.loaders as loaders
