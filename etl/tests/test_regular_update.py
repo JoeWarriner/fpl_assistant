@@ -2,14 +2,10 @@ import pytest
 from datetime import datetime, date
 import database.tables as tbl 
 from database.data_access_layer import dal
-from etl.pipeline_management.etl_pipeline import DataImportPipeline
 from etl.pipeline_management.base_pipeline import Pipeline
-import etl.jobs.extractors.api.api_models as api_models
-import etl.jobs.extractors.api_extractors as extractor
-import etl.jobs.transformers.api_transformers as api_transformers
-import etl.jobs.loaders.loaders as loaders
 from etl.tests.utils import ProjectFilesforTests
-from sqlalchemy import select, insert
+from etl.tests.db_fixtures import database
+from sqlalchemy import select
 from sqlalchemy.orm import aliased
 
 from etl.imports.regular_import import RegularImport
@@ -19,15 +15,6 @@ RegularImport.today_date = date(2023,9,1)
 regular_import = RegularImport()
 
 
-@pytest.fixture
-def database():
-    dal.conn_string = 'postgresql+psycopg2://postgres@localhost/fftest'
-    dal.connect()
-    dal.reset_tables()
-    dal.session = dal.Session()
-    yield
-    dal.session.rollback()
-    dal.session.close()
 
 
 

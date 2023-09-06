@@ -1,19 +1,9 @@
 import pytest
 import database.tables as tbl
 from database.data_access_layer import dal
-import etl.jobs.extractors.seasons_extractor as seasons_extractor
-import etl.jobs.transformers.data_table_transformers as tform
-from etl.jobs.loaders.loaders import DBLoader
-import etl.jobs.extractors.api.api_models as api_models
-from etl.jobs.extractors.data_table_extractor import DataTableExtractor
-from etl.jobs.extractors.api_extractors import APIExtractor
 from etl.pipeline_management.base_pipeline import Pipeline
-from etl.pipeline_management.etl_pipeline import DataImportPipeline
-from etl.jobs.transformers.api_transformers import APITransformer, PositionAdapter
-from etl.utils.file_handlers import ProjectFiles
-from etl.jobs.extractors.api.api_download import APIDownloader
 from etl.tests.utils import PathsForTests
-from pathlib import Path
+from etl.tests.db_fixtures import database
 from etl.imports.initial_import import  InitialImport
 
 InitialImport.pathlib = PathsForTests
@@ -26,20 +16,6 @@ initial_import = InitialImport()
 from sqlalchemy import select
 from sqlalchemy.orm import aliased
 
-
-
-
-
-@pytest.fixture
-def database():
-    dal.conn_string = 'postgresql+psycopg2://postgres@localhost/fftest'
-    dal.connect()
-    dal.reset_tables() # Want to start from an empty database.
-    dal.session = dal.Session()
-    yield
-    dal.session.rollback()
-    dal.session.close()
-    
 
 
 
