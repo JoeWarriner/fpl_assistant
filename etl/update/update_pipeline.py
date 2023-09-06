@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from copy import copy
 from sqlalchemy.orm import Session
 
-import etl.update.extracters as extract
+import etl.jobs.extractors.extracters as extract
 import etl.update.api as api
 import etl.update.adapters as tform
 import etl.update.loaders as load
@@ -137,7 +137,7 @@ if __name__ == "__main__":
         orchestrator = PipelineOrchestrator()
 
         gw_import = DataImportPipeline(
-            extracter = extract.APIExtracter(api.GameWeek, ProjectFiles.gameweeks_json), 
+            extracter = extract.APIExtractor(api.GameWeek, ProjectFiles.gameweeks_json), 
             transformer = tform.GameWeekAdapter(session),
             loader = load.DictionaryDBLoader(Gameweek, session)
         )

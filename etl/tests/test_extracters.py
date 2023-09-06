@@ -1,7 +1,7 @@
 import pytest
 import pandas as pd
 from pathlib import Path
-from etl.update.extracters import DataTableExtracter
+from etl.jobs.extractors.extracters import DataTableExtractor
 from etl.tests.utils import PathsForTests
 
 SEASONS = ['2021-22', '2022-23']
@@ -12,7 +12,7 @@ SEASONS = ['2021-22', '2022-23']
 
 
 def test_df_player_extract():
-    extractor = DataTableExtracter(SEASONS, filename='players_raw.csv', pathlib=PathsForTests)
+    extractor = DataTableExtractor(SEASONS, filename='players_raw.csv', pathlib=PathsForTests)
     output = extractor.extract()
     expected_output = pd.DataFrame(
         columns = ['second_name', 'season'],
@@ -31,7 +31,7 @@ def test_df_player_extract():
 
 
 def test_df_gameweek_extract():
-    extractor = DataTableExtracter(SEASONS, filename=Path('gws', 'merged_gw.csv'), pathlib=PathsForTests)
+    extractor = DataTableExtractor(SEASONS, filename=Path('gws', 'merged_gw.csv'), pathlib=PathsForTests)
     output = extractor.extract()
     expected_output = pd.DataFrame(
         columns = ['GW', 'season'],

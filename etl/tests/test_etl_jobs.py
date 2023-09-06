@@ -9,7 +9,7 @@ from pathlib import Path
 
 
 from etl.seed_db.data_files import GameWeekTransformer
-from etl.update.extracters import DataTableExtracter
+from etl.jobs.extractors.extracters import DataTableExtractor
 from etl.update.loaders import DBLoader
 
 import database.tables as tbl
@@ -19,7 +19,7 @@ from sqlalchemy import select
 
 def test_gameweek_etl(insert_seasons):
     gameweek = DataImportPipeline(
-        DataTableExtracter(['2021-22','2022-23'], Path('gws', 'merged_gw.csv'), pathlib=PathsForTests),
+        DataTableExtractor(['2021-22','2022-23'], Path('gws', 'merged_gw.csv'), pathlib=PathsForTests),
         GameWeekTransformer(),
         DBLoader(tbl.Gameweek)
     )

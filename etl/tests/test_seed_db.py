@@ -5,7 +5,7 @@ import etl.seed_db.seed as seed
 import etl.seed_db.data_files as tform
 from etl.update.loaders import DBLoader
 import etl.update.api as api
-from etl.update.extracters import DataTableExtracter, APIExtracter
+from etl.jobs.extractors.extracters import DataTableExtractor, APIExtractor
 from etl.update.update_pipeline import PipelineOrchestrator, DataImportPipeline
 from etl.update.adapters import APITranformer, PositionAdapter
 from etl.utils.file_handlers import ProjectFiles
@@ -68,49 +68,49 @@ seasons = DataImportPipeline(
 )
 
 players = DataImportPipeline(
-        extracter = DataTableExtracter(SEASONS_TO_IMPORT, 'players_raw.csv', pathlib = PathsForTests),
+        extracter = DataTableExtractor(SEASONS_TO_IMPORT, 'players_raw.csv', pathlib = PathsForTests),
         transformer = tform.PlayerTransformer(),
         loader =  DBLoader(tbl.Player)
     )
 
 teams = DataImportPipeline(
-    extracter= DataTableExtracter(SEASONS_TO_IMPORT, 'teams.csv', pathlib = PathsForTests),
+    extracter= DataTableExtractor(SEASONS_TO_IMPORT, 'teams.csv', pathlib = PathsForTests),
     transformer= tform.TeamTransformer(),
     loader = DBLoader(tbl.Team)
 )
 
 team_seasons = DataImportPipeline(
-    extracter= DataTableExtracter(SEASONS_TO_IMPORT, 'players_raw.csv', pathlib = PathsForTests),
+    extracter= DataTableExtractor(SEASONS_TO_IMPORT, 'players_raw.csv', pathlib = PathsForTests),
     transformer= tform.TeamSeasonTransformer(),
     loader=DBLoader(tbl.TeamSeason)
 )
 
 positions = DataImportPipeline(
-    extracter = APIExtracter(api.Position, ProjectFiles.positions_json),
+    extracter = APIExtractor(api.Position, ProjectFiles.positions_json),
     transformer = APITranformer(PositionAdapter),
     loader = DBLoader(tbl.Position)
 )
 
 player_seasons = DataImportPipeline(
-    extracter= DataTableExtracter(SEASONS_TO_IMPORT, 'players_raw.csv', pathlib = PathsForTests),
+    extracter= DataTableExtractor(SEASONS_TO_IMPORT, 'players_raw.csv', pathlib = PathsForTests),
     transformer=tform.PlayerSeasonTransformer(),
     loader = DBLoader(tbl.PlayerSeason)
 )
 
 gameweeks = DataImportPipeline(
-    extracter = DataTableExtracter(SEASONS_TO_IMPORT, Path('gws', 'merged_gw.csv'), pathlib = PathsForTests),
+    extracter = DataTableExtractor(SEASONS_TO_IMPORT, Path('gws', 'merged_gw.csv'), pathlib = PathsForTests),
     transformer= tform.GameWeekTransformer(),
     loader = DBLoader(tbl.Gameweek)
 )
 
 fixtures = DataImportPipeline(
-    extracter = DataTableExtracter(SEASONS_TO_IMPORT, 'fixtures.csv', pathlib = PathsForTests),
+    extracter = DataTableExtractor(SEASONS_TO_IMPORT, 'fixtures.csv', pathlib = PathsForTests),
     transformer=tform.FixturesTransformer(),
     loader=DBLoader(tbl.Fixture)
 )
 
 player_performances = DataImportPipeline(
-    extracter=DataTableExtracter(SEASONS_TO_IMPORT, Path('gws', 'merged_gw.csv'), pathlib = PathsForTests),
+    extracter=DataTableExtractor(SEASONS_TO_IMPORT, Path('gws', 'merged_gw.csv'), pathlib = PathsForTests),
     transformer= tform.PlayerPerformanceTransformer(),
     loader= DBLoader(tbl.PlayerPerformance)
 )

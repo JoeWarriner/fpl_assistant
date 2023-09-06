@@ -4,7 +4,7 @@ import database.tables as tbl
 from database.data_access_layer import dal
 from etl.update.update_pipeline import PipelineOrchestrator, DataImportPipeline
 import etl.update.api as api
-import etl.update.extracters as extracters
+import etl.jobs.extractors.extracters as extracters
 import etl.update.adapters as adapters
 import etl.update.loaders as loaders
 import etl.update.tests.test_data.test_api_dicts as test_data
@@ -14,58 +14,58 @@ from sqlalchemy.orm import aliased
 
 
 players = DataImportPipeline(
-        extracter= extracters.APIExtracter(api.Player, ProjectFilesForTests.player_overview_json),
+        extracter= extracters.APIExtractor(api.Player, ProjectFilesForTests.player_overview_json),
         transformer= adapters.APITranformer(adapter=adapters.PlayerAdapter),
         loader = loaders.DBLoader(tbl.Player)
 )
 
 teams = DataImportPipeline(
-        extracter= extracters.APIExtracter(api.Team, ProjectFilesForTests.teams_json),
+        extracter= extracters.APIExtractor(api.Team, ProjectFilesForTests.teams_json),
         transformer= adapters.APITranformer(adapter=adapters.TeamAdapter),
         loader = loaders.DBLoader(tbl.Team)
 )
 
 
 positions = DataImportPipeline(
-        extracter= extracters.APIExtracter(api.Position, ProjectFilesForTests.positions_json),
+        extracter= extracters.APIExtractor(api.Position, ProjectFilesForTests.positions_json),
         transformer= adapters.APITranformer(adapter=adapters.PositionAdapter),
         loader = loaders.DBLoader(tbl.Position)
 )
 
 player_seasons = DataImportPipeline(
-        extracter= extracters.APIExtracter(api.Player, ProjectFilesForTests.player_overview_json),
+        extracter= extracters.APIExtractor(api.Player, ProjectFilesForTests.player_overview_json),
         transformer= adapters.APITranformer(adapter=adapters.PlayerSeason),
         loader = loaders.DBLoader(tbl.PlayerSeason)
 )
 
 team_seasons = DataImportPipeline(
-        extracter= extracters.APIExtracter(api.Team, ProjectFilesForTests.teams_json),
+        extracter= extracters.APIExtractor(api.Team, ProjectFilesForTests.teams_json),
         transformer= adapters.APITranformer(adapter=adapters.TeamSeasonAdapter),
         loader = loaders.DBLoader(tbl.TeamSeason)
 )
 
 
 gameweeks = DataImportPipeline(
-        extracter= extracters.APIExtracter(api.GameWeek, ProjectFilesForTests.gameweeks_json),
+        extracter= extracters.APIExtractor(api.GameWeek, ProjectFilesForTests.gameweeks_json),
         transformer= adapters.APITranformer(adapter=adapters.GameWeekAdapter),
         loader = loaders.DBLoader(tbl.Gameweek)
 )
 
 fixtures = DataImportPipeline(
-        extracter= extracters.APIExtracter(api.Fixture, ProjectFilesForTests.fixtures_json),
+        extracter= extracters.APIExtractor(api.Fixture, ProjectFilesForTests.fixtures_json),
         transformer= adapters.APITranformer(adapter=adapters.FixtureAdapter),
         loader = loaders.DBLoader(tbl.Fixture)
 )
 
 player_fixtures = DataImportPipeline(
-        extracter= extracters.APIExtracter(api.PlayerFixture, ProjectFilesForTests.get_all_player_fixtures),
+        extracter= extracters.APIExtractor(api.PlayerFixture, ProjectFilesForTests.get_all_player_fixtures),
         transformer= adapters.APITranformer(adapter=adapters.PlayerFixtureAdapter),
         loader = loaders.DBLoader(tbl.PlayerFixture)
 )
 
 
 player_performances = DataImportPipeline(
-        extracter= extracters.APIExtracter(api.PlayerPerformance, ProjectFilesForTests.get_all_player_performances),
+        extracter= extracters.APIExtractor(api.PlayerPerformance, ProjectFilesForTests.get_all_player_performances),
         transformer= adapters.APITranformer(adapter=adapters.PlayerPerformanceAdapter),
         loader = loaders.DBLoader(tbl.PlayerPerformance)
 )

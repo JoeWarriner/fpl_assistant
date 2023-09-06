@@ -4,13 +4,13 @@ from pydantic import BaseModel
 from etl.utils.paths import ProjectPaths
 import pandas as pd
 
-class Extracter(ABC):
+class Extractor(ABC):
 
     @abstractmethod
     def extract() -> list[Any]:
         ...
 
-class APIExtracter(Extracter):
+class APIExtractor(Extractor):
     
     def __init__(self, api_model_class: type[BaseModel], api_data_getter: list[dict[str, Any]]):
         self.api_model_class = api_model_class
@@ -23,7 +23,7 @@ class APIExtracter(Extracter):
         return f'API Extractor: {self.api_model_class}'
 
 
-class DataTableExtracter(Extracter):
+class DataTableExtractor(Extractor):
     def __init__(self, seasons, filename, pathlib = ProjectPaths):
         self.seasons = seasons
         self.filename = filename
