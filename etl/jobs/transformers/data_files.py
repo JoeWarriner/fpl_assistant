@@ -202,11 +202,6 @@ class PlayerPerformanceTransformer(DataFileTransformer):
                                     'clean_sheets': 'clean_sheet'
                                 })
         
-        print('BREAK 1 - PLAYER PERFORMANCES')
-        print(player_performances_data[['element', 'was_home', 'fixture_id']])
-        print('BREAK 1 - FIXTURES')
-        print(fixtures[['fpl_fixture_id', 'away_team_id', 'home_team_id']])
-        
         home_fixtures = player_performances_data[
                                 player_performances_data['was_home'] == True
                             ].merge(
@@ -216,8 +211,7 @@ class PlayerPerformanceTransformer(DataFileTransformer):
                             ).drop(columns = ['fixture_id','fpl_fixture_id']
                             ).rename(columns={'away_team_id': 'opposition_id', 'home_team_id': 'team_id'})
         
-        print('BREAK 2 - HOME FIXTURES')
-        print(home_fixtures[['fixture', 'opposition_id', 'team_id', 'element', 'was_home']])
+
         
 
         away_fixtures = player_performances_data[
@@ -232,8 +226,6 @@ class PlayerPerformanceTransformer(DataFileTransformer):
                                 'home_team_id': 'opposition_id'
                             })            
         
-        print('BREAK 3 - AWAY FIXTURES')
-        print(away_fixtures[['fixture', 'opposition_id', 'team_id', 'element', 'was_home']])
 
         player_performances_data = pd.concat([home_fixtures, away_fixtures]
                                 ).merge(players,
@@ -241,9 +233,5 @@ class PlayerPerformanceTransformer(DataFileTransformer):
                                     right_on= ['fpl_player_season_id', 'season_id']
                                 ).astype({'clean_sheet': 'boolean'}
                                 ).drop(columns=['element', 'fpl_player_season_id', 'season_id']).rename(columns={'fixture':'fixture_id'})
-        print('BREAK 4 - COMBINED DATA')
-        print(player_performances_data[['fixture_id', 'opposition_id', 'team_id', 'player_id']])
 
-        print('BREAK 5 - Player seasons')
-        print(players)
         return player_performances_data
