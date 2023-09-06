@@ -3,6 +3,7 @@ from etl.jobs.base_job import Job
 
 
 class Pipeline(Job):
+    expects_input = False
     task_serializer: type[PipelineTaskSerializer] = DAGTopologicalSerializer
 
     def __init__(self):

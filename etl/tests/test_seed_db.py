@@ -1,17 +1,17 @@
 import pytest
 import database.tables as tbl
 from database.data_access_layer import dal
-import etl.jobs.extractors.create_seasons as create_seasons
+import etl.jobs.extractors.seasons_extractor as seasons_extractor
 import etl.jobs.transformers.data_table_transformers as tform
 from etl.jobs.loaders.loaders import DBLoader
-import etl.jobs.api as api
+import etl.jobs.extractors.api.api_models as api_models
 from etl.jobs.extractors.data_table_extractor import DataTableExtractor
 from etl.jobs.extractors.api_extractors import APIExtractor
 from etl.pipeline.base_pipeline import Pipeline
 from etl.pipeline.etl_pipeline import DataImportPipeline
 from etl.jobs.transformers.api_transformers import APITransformer, PositionAdapter
 from etl.utils.file_handlers import ProjectFiles
-from etl.jobs.extract_api_data import APIDownloader
+from etl.jobs.extractors.api.api_download import APIDownloader
 from etl.tests.utils import PathsForTests
 from pathlib import Path
 
@@ -36,7 +36,7 @@ def database():
     
 
 def test_is_current_season_aug_start_year():
-    season_creater = create_seasons.CreateSeasons(seasons=None)
+    season_creater = seasons_extractor.CreateSeasons(seasons=None)
     season_creater.now_month = 8
     season_creater.now_year = 2019
     assert not season_creater.season_is_current(season_start_year=2018)
@@ -44,7 +44,7 @@ def test_is_current_season_aug_start_year():
     assert not season_creater.season_is_current(season_start_year=2020)
 
 def test_is_current_season_jul_end_year():
-    season_creater = create_seasons.CreateSeasons(seasons=None)
+    season_creater = seasons_extractor.CreateSeasons(seasons=None)
     season_creater.now_month = 7
     season_creater.now_year = 2019
     assert not season_creater.season_is_current(season_start_year=2017)
@@ -54,7 +54,7 @@ def test_is_current_season_jul_end_year():
 
 
 seasons = DataImportPipeline(
-        extractor=create_seasons.CreateSeasons(SEASONS_TO_IMPORT),
+        extractor=seasons_extractor.CreateSeasons(SEASONS_TO_IMPORT),
         transformer=None,
         loader= DBLoader(tbl.Season)
 )
@@ -78,7 +78,7 @@ team_seasons = DataImportPipeline(
 )
 
 positions = DataImportPipeline(
-    extractor = APIExtractor(api.Position, ProjectFiles.positions_json),
+    extractor = APIExtractor(api_models.Position, ProjectFiles.positions_json),
     transformer = APITransformer(PositionAdapter),
     loader = DBLoader(tbl.Position)
 )

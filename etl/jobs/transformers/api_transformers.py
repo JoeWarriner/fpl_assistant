@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, DeclarativeBase
 from database.data_access_layer import dal
 import database.tables as tbl
-import etl.jobs.api as api
+import etl.jobs.extractors.api.api_models as api_models
 
 class APITransformer(Transformer):
     def __init__(self, adapter: type[Adapter]):
@@ -54,7 +54,7 @@ class Adapter:
             
     
 class PlayerAdapter(Adapter):
-    input: api.Player
+    input: api_models.Player
     table_ref = tbl.Player
 
     def transform(self):
@@ -62,7 +62,7 @@ class PlayerAdapter(Adapter):
 
 
 class PositionAdapter(Adapter):
-    input: api.Position
+    input: api_models.Position
     table_ref = tbl.Position
 
     def transform(self):
@@ -72,7 +72,7 @@ class PositionAdapter(Adapter):
 
 
 class PlayerSeason(Adapter):
-    input: api.Player
+    input: api_models.Player
     table_ref = tbl.PlayerSeason
 
     def transform(self):
@@ -85,7 +85,7 @@ class PlayerSeason(Adapter):
         
 
 class TeamAdapter(Adapter):
-    input: api.Team
+    input: api_models.Team
     table_ref = tbl.Team
 
     def transform(self):
@@ -94,7 +94,7 @@ class TeamAdapter(Adapter):
         
 
 class TeamSeasonAdapter(Adapter):
-    input: api.Team
+    input: api_models.Team
     table_ref = tbl.TeamSeason
 
     def transform(self):
@@ -104,7 +104,7 @@ class TeamSeasonAdapter(Adapter):
 
 
 class GameWeekAdapter(Adapter):
-    input: api.GameWeek
+    input: api_models.GameWeek
     table_ref = tbl.Gameweek
 
     def transform(self):
@@ -114,7 +114,7 @@ class GameWeekAdapter(Adapter):
 
 
 class FixtureAdapter(Adapter):
-    input: api.Fixture
+    input: api_models.Fixture
     table_ref = tbl.Fixture
 
     def transform(self):
@@ -133,7 +133,7 @@ class FixtureAdapter(Adapter):
 
 
 class PlayerFixtureAdapter(Adapter):
-    input: api.PlayerFixture
+    input: api_models.PlayerFixture
     table_ref = tbl.PlayerFixture
 
 
@@ -158,7 +158,7 @@ class PlayerFixtureAdapter(Adapter):
         
 
 class PlayerPerformanceAdapter(Adapter):
-    input: api.PlayerPerformance
+    input: api_models.PlayerPerformance
     table_ref = tbl.PlayerPerformance
     
     def transform(self):
