@@ -1,22 +1,18 @@
 import React, { useState, useEffect } from 'react';
 
-const getTeamData = async () => {
-    try {
-        const response = await fetch("http://127.0.0.1:8000/best-team");
-        const team: string[] = await response.json() as string[];
-        return team;
-    } catch (error)  {
-        console.log('Error getting data from server: ', error)
-        return [];
-    }
-}
+import type {Player} from '../types/player';
+import {PlayerRow } from '../components/players';
+import { getOptimalTeam } from '../services/backend';
+
+
+
 
 const TeamSelector = () => {
 
-    const [team, setTeam] = useState<string[]>([]);
+    const [team, setTeam] = useState<Player[]>([]);
     
     useEffect(() => {
-        getTeamData().then((result) => {
+        getOptimalTeam().then((result) => {
             setTeam(result);
          }).catch((error) => {
             console.log("Error fetching data", error)
@@ -27,7 +23,9 @@ const TeamSelector = () => {
     return (
         <>
             <p>This is the team selector page. The best team is: </p>
-            {team.map((player) => <p> -  {player} </p> )}
+            <table>
+            {team.map((player) => PlayerRow(player) )}
+            </table>
         </>
     )
 };

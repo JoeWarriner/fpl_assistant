@@ -8,7 +8,7 @@ import { createBrowserRouter,  RouterProvider } from "react-router-dom";
 import Home from './pages/Home';
 import TeamSelector from './pages/TeamSelector';
 import Trade from './pages/Trade';
-import Visualiser from './pages/Visualiser';
+import PlayerData from './pages/PlayerData';
 
 const router = createBrowserRouter([
   {
@@ -24,8 +24,8 @@ const router = createBrowserRouter([
       element: <Trade />
     },
     {
-      path: "visualiser",
-      element: <Visualiser />
+      path: "player_data",
+      element: <PlayerData />
     }
   ]
   },
