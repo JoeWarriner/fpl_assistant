@@ -8,6 +8,7 @@ import etl.jobs.extractors.api.api_models as api_models
 import etl.jobs.extractors.api_extractors as extractor
 import etl.jobs.transformers.api_transformers as api_transformers
 import etl.jobs.loaders.loaders as loaders
+from etl.jobs.extractors.api.api_download import APIDownloader
 from etl.utils.file_handlers import ProjectFiles
 
 
@@ -24,6 +25,8 @@ class RegularImport(Job):
 
 
     def jobs(self):
+        self.api_download = APIDownloader()
+
 
         self.seasons = DataImportPipeline(
             extractor= CreateThisSeason(self.today_date),
@@ -91,13 +94,16 @@ class RegularImport(Job):
     
     def pipeline(self):
         pipeline = Pipeline()
+        pipeline.add_task(self.api_download)
+        pipeline.add_task(self.seasons)
         pipeline.add_task(self.players, predecessors={self.seasons})
         pipeline.add_task(self.teams, predecessors={self.seasons})
         pipeline.add_task(self.team_seasons, predecessors={self.teams, self.seasons})
         pipeline.add_task(self.gameweeks, predecessors={self.seasons})
         pipeline.add_task(self.fixtures, predecessors={self.team_seasons, self.gameweeks})
-        pipeline.add_task(self.player_fixtures, predecessors={self.players, self.fixtures})
-        pipeline.add_task(self.player_performances, predecessors = {self.players, self.fixtures})
+        pipeline.add_task(self.player_seasons, predecessors={self.team_seasons, self.seasons, self.players})
+        pipeline.add_task(self.player_fixtures, predecessors={self.player_seasons, self.fixtures})
+        pipeline.add_task(self.player_performances, predecessors = {self.player_seasons, self.fixtures})
         return pipeline
 
     def run(self):

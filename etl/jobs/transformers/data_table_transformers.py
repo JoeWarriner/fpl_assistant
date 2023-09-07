@@ -4,6 +4,7 @@ from database.data_access_layer import dal
 from datetime import datetime
 import pandas as pd
 import sqlalchemy
+from etl.utils.logging import log
 
 class DataTableTransformer(Transformer):
     dataframe: pd.DataFrame
@@ -27,6 +28,7 @@ class DataTableTransformer(Transformer):
         return data
 
     def run(self, data: pd.DataFrame):
+        log(f'Running data table transformer: {self.__class__.__name__}')
         data = self.convert_season_ids(data)
         dataframe = self.do_transformations(data)            
         return dataframe.to_dict(orient='records')

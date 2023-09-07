@@ -5,6 +5,7 @@ from etl.jobs.transformers.base_transformer import Transformer
 from abc import ABC, abstractmethod
 from sqlalchemy import select
 from sqlalchemy.orm import Session, DeclarativeBase
+from etl.utils.logging import log
 from database.data_access_layer import dal
 import database.tables as tbl
 import etl.jobs.extractors.api.api_models as api_models
@@ -14,6 +15,7 @@ class APITransformer(Transformer):
         self.adapter = adapter
     
     def run(self, input_list):
+        log(f'Running API transformer with adapter: {self.adapter}')
         adapter = self.adapter()
         output = [adapter.convert(input) for input in input_list]
         return output

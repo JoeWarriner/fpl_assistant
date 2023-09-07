@@ -1,7 +1,6 @@
 from datetime import date
 import database.tables as tbl 
 from pathlib import Path
-
 from etl.jobs.base_job import Job
 from etl.pipeline_management.etl_pipeline import DataImportPipeline
 from etl.pipeline_management.base_pipeline import Pipeline
@@ -90,6 +89,7 @@ class InitialImport(Job):
         pipeline.add_task(self.seasons)
         pipeline.add_task(self.players, predecessors={self.seasons})
         pipeline.add_task(self.teams, predecessors={self.seasons})
+        pipeline.add_task(self.player_seasons, predecessors={self.seasons, self.players, self.team_seasons})
         pipeline.add_task(self.team_seasons, predecessors={self.teams, self.seasons})
         pipeline.add_task(self.gameweeks, predecessors={self.seasons})
         pipeline.add_task(self.fixtures, predecessors={self.team_seasons, self.gameweeks})

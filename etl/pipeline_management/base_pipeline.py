@@ -1,5 +1,6 @@
 from etl.pipeline_management.serializers import PipelineTaskSerializer, DAGTopologicalSerializer
 from etl.jobs.base_job import Job
+from etl.utils.logging import log
 
 
 class Pipeline(Job):
@@ -18,8 +19,11 @@ class Pipeline(Job):
 
 
     def run(self):
+        
         serializer = self.task_serializer(self.tasks)
+        log('Starting pipeline, serlialising tasks')
         sorted_task_list = serializer.serialize()
+        log(f'Task list: {sorted_task_list}')
         data = None
         for task in sorted_task_list:
             if task.expects_input: 

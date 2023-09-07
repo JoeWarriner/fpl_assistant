@@ -1,5 +1,6 @@
 from etl.jobs.extractors.base_extractor import Extractor
 from etl.utils.paths import ProjectPaths
+from etl.utils.logging import log
 import pandas as pd
 
 class DataTableExtractor(Extractor):
@@ -9,6 +10,7 @@ class DataTableExtractor(Extractor):
         self.pathlib = pathlib
     
     def run(self) -> pd.DataFrame:
+        log(f'Extracting: from {self.filename}')
         season_data_list = []
         for season in self.seasons:
             path = self.pathlib.get_season_data_directory(season) / self.filename

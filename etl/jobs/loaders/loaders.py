@@ -2,6 +2,7 @@ from sqlalchemy.dialects.postgresql import insert
 from database.data_access_layer import dal
 from sqlalchemy.orm import  DeclarativeBase
 from etl.jobs.loaders.base_loader import Loader
+from etl.utils.logging import log
 
 
 class DBLoader(Loader):
@@ -9,6 +10,7 @@ class DBLoader(Loader):
         self.table = table
     
     def run(self, data):
+        log(f'Loading to table: {self.table}')
         if isinstance(data, dict):
             self.load_single(data)
         elif isinstance(data, list):

@@ -55,7 +55,7 @@ class Fixture(BaseModel):
     event: Optional[int]
     finished: bool
     id: int
-    kickoff_time: datetime
+    kickoff_time: Optional[datetime]
     minutes: int
     started: Optional[bool]
     team_a: int
@@ -71,11 +71,10 @@ class PlayerFixture(BaseModel):
     code: int
     team_h: int
     team_a: int
-    event: int
+    event: Optional[int]
     finished: bool
     provisional_start_time: bool
-    kickoff_time: str
-    event_name: str
+    kickoff_time: Optional[str]
     is_home: bool
     difficulty: int  
     element: int #added in file handling
