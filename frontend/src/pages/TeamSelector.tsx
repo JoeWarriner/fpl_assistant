@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 import type {Player} from '../types/player';
-import {PlayerRow } from '../components/players';
+import {PlayerRow } from '../components/rows';
 import { getOptimalTeam } from '../services/backend';
 
 

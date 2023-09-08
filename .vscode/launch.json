@@ -5,11 +5,19 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Tests",
+            "name": "Python: All Tests",
             "type": "python",
             "request": "launch",
             "module": "pytest",
-            "args": ["."],
+            "args": ["~/Projects/fantasy_football_assistant"],
+            "justMyCode": true
+        },
+        {
+            "name": "Python: Module Tests",
+            "type": "python",
+            "request": "launch",
+            "module": "pytest",
+            "args": ["~/Projects/fantasy_football_assistant/backend/modules"],
             "justMyCode": true
         }
     ]

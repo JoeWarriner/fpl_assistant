@@ -1,0 +1,67 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`player table offset 1 1`] = `
+<table>
+  <th>
+    <th>
+       First Name 
+    </th>
+    <th>
+       Second Name 
+    </th>
+    <th>
+       Position 
+    </th>
+  </th>
+  <tr>
+    <td>
+       
+      Billy
+       
+    </td>
+    <td>
+       
+      Bob
+       
+    </td>
+    <td>
+       
+      DEF
+       
+    </td>
+  </tr>
+</table>
+`;
+
+exports[`player table offset 1 2`] = `
+<table>
+  <th>
+    <th>
+       First Name 
+    </th>
+    <th>
+       Second Name 
+    </th>
+    <th>
+       Position 
+    </th>
+  </th>
+  <tr>
+    <td>
+       
+      Sammy
+       
+    </td>
+    <td>
+       
+      Ray
+       
+    </td>
+    <td>
+       
+      FWD
+       
+    </td>
+  </tr>
+</table>
+`;
