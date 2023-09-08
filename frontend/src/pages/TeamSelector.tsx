@@ -15,7 +15,7 @@ const TeamSelector = () => {
         getOptimalTeam().then((result) => {
             setTeam(result);
          }).catch((error) => {
-            console.log("Error fetching data", error)
+            console.log("Error fetching data", error);
          });
     }, []);
 
@@ -27,7 +27,7 @@ const TeamSelector = () => {
             {team.map((player) => PlayerRow(player) )}
             </table>
         </>
-    )
-};
+    );
+}
 
-export default TeamSelector
+export default TeamSelector;

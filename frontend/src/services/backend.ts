@@ -9,7 +9,7 @@ export const getPlayers = async () => {
         const team: Player[] = await response.json() as Player[];
         return team;
     } catch (error)  {
-        console.log('Error getting data from server: ', error)
+        console.log('Error getting data from server: ', error);
         return [];
     }
 }
@@ -21,7 +21,7 @@ export const getOptimalTeam = async () => {
         const team: Player[] = await response.json() as Player[];
         return team;
     } catch (error)  {
-        console.log('Error getting data from server: ', error)
+        console.log('Error getting data from server: ', error);
         return [];
     }
 }

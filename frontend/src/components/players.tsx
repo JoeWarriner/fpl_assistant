@@ -8,8 +8,7 @@ export function PlayerRow(player: Player): JSX.Element{
                 <td> {player.first_name} </td>
                 <td> {player.second_name} </td>
                 <td> {player.position} </td>
-            </tr>
-        
-    );
-    
+            </tr>  
+    );    
 }
+

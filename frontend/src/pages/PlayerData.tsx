@@ -13,7 +13,7 @@ const PlayerData = () => {
             setPlayers(result);
         }).catch((error) => {
             console.log("Error fetching data", error);
-        })
+        });
     },[]);
 
     return (

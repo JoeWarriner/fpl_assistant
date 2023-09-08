@@ -1,5 +1,5 @@
 const Trade = () => {
-    return "Page under construction"
+    return "Page under construction";
 }
 
 export default Trade;

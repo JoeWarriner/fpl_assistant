@@ -5,10 +5,9 @@ import { Dropdown, Navbar, Nav, NavDropdown, Container, Row, Col} from "react-bo
 // import Col from "react-bootstrap/Col";
 
 const Home = () => {
-    const outlet = useOutlet()
+    const outlet = useOutlet();
     return (
         <>
-
             <Navbar expand="lg" bg="dark" data-bs-theme="dark">
                 <Container>
                     <Navbar.Brand href="/" className="text-light">Fantasy Football Assistant</Navbar.Brand>
@@ -32,7 +31,7 @@ const Home = () => {
             </Container>
     
         </>   
-    )
-};
+    );
+}
 
 export default Home
