@@ -7,7 +7,7 @@ from decimal import Decimal
 from datetime import datetime
 
 class ModelPredictions(Job):
-    
+    expects_input = False
 
     def __init__(self):
         self.window_size = 10
@@ -85,7 +85,7 @@ class ModelPredictions(Job):
         players = self.get_current_players()
         for player in players:
             performances = self.get_player_recent_peformances(player)
-            if len(performances) > 10:
+            if len(performances) == self.window_size:
                 prediction = self.calculate_mean(list(performances))
                 future_fixture_ids = self.get_player_future_fixtures(player)
                 self.update_future_fixture_predictions(

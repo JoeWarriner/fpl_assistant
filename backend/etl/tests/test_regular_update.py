@@ -398,4 +398,13 @@ def test_player_fixture_import(import_player_performances):
     assert performance_1.bonus == 0
     assert performance_1.assists == 1
 
+@pytest.fixture
+def run_prediction_modelling(import_player_performances):
+    orchestrator = import_player_performances
+    orchestrator.add_task(regular_import.update_player_predictions, predecessors = {regular_import.player_fixtures, regular_import.player_performances})
+    return orchestrator
+
+def test_prediction_modelling(run_prediction_modelling):
+    '''Test for any errors thrown - main tests for accuracy are in test_prediction_modelling'''
+    run_prediction_modelling.run()
     

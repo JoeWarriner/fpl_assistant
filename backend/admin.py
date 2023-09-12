@@ -15,6 +15,8 @@ parser.add_argument('command')
 args = parser.parse_args()
 task = command_functions.get(args.command)()
 dal.connect()
+if args.command == 'init':
+    dal.reset_tables()
 dal.session = dal.Session()
 try:
     task.run()
