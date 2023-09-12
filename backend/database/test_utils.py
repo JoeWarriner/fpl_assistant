@@ -3,7 +3,7 @@ from pathlib import Path
 from database.data_access_layer import dal
 from datetime import datetime
 import database.tables as tbl
-from sqlalchemy import insert
+from sqlalchemy import insert, update
 import pandas as pd
 
 
@@ -60,3 +60,11 @@ def populate_database():
             table_data = table_data.drop(columns=['testing_notes'])
 
         table_data.to_sql(table, dal.engine, index=False, if_exists='append')
+
+
+@pytest.fixture
+def populated_database_with_predictions(populated_database):
+    dal.session.execute(update(tbl.PlayerFixture).values(
+        predicted_score = 2.7
+    )
+    )
