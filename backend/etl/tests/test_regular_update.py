@@ -54,10 +54,12 @@ def test_player_import(import_players):
     alisson, = dal.session.execute(select(tbl.Player).where(tbl.Player.second_name == 'Ramses Becker')).one()
     assert alisson.first_name == 'Alisson'
     assert alisson.fpl_id == 116535
+    assert alisson.current_value == 55
 
     alvarez, = dal.session.execute(select(tbl.Player).where(tbl.Player.second_name == 'Álvarez')).one()
     assert alvarez.first_name == 'Julián'
     assert alvarez.fpl_id == 461358
+    assert alvarez.current_value == 67
 
 
 @pytest.fixture

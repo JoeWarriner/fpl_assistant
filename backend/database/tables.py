@@ -171,6 +171,7 @@ class Player(Base):
     fpl_id = Column(Integer, unique=True)
     first_name = Column(String(35))
     second_name = Column(String(35))
+    current_value = Column(Integer, nullable=True)
     
     player_performances = relationship("PlayerPerformance", back_populates="player")
     player_fixtures = relationship("PlayerFixture", back_populates="player")

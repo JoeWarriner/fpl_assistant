@@ -61,7 +61,8 @@ class PlayerAdapter(Adapter):
 
     def transform(self):
         self.fpl_id = self.input.code
-
+        self.current_value = self.input.now_cost
+        
 
 class PositionAdapter(Adapter):
     input: api_models.Position
