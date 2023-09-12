@@ -7,10 +7,14 @@ from decimal import Decimal
 from datetime import datetime
 
 class ModelPredictions(Job):
-    window_size = 10
+    
+
+    def __init__(self):
+        self.window_size = 10
+        self.today_date = datetime.now()
 
     def get_current_players(self) -> Result:
-        result = dal.session.execute(
+        result = dal.session.scalars(
             select(
                 tbl.Player
             ).join(
@@ -19,11 +23,11 @@ class ModelPredictions(Job):
                 tbl.Season, tbl.PlayerSeason.season_id == tbl.Season.id
             ).where(
                 tbl.Season.is_current == True
-            ))
+            )).all()
         return result
     
 
-    def get_player_recent_peformances(self, player: tbl.Player, number = 10) -> Sequence[int]:
+    def get_player_recent_peformances(self, player: tbl.Player) -> Sequence[int]:
         result = dal.session.scalars(
             select(
                 tbl.PlayerPerformance.total_points
@@ -36,7 +40,7 @@ class ModelPredictions(Job):
             ).order_by(
                 tbl.Fixture.kickoff_time.desc()
             )
-        ).fetchmany(number)
+        ).fetchmany(self.window_size)
 
         return result
 
@@ -48,7 +52,7 @@ class ModelPredictions(Job):
 
         return mean
     
-    def get_player_future_fixtures(self, player: tbl.Player, today_date = datetime.now()):
+    def get_player_future_fixtures(self, player: tbl.Player):
         output = dal.session.scalars(
             select(
                 tbl.PlayerFixture.id
@@ -58,6 +62,8 @@ class ModelPredictions(Job):
                 tbl.Fixture, tbl.PlayerFixture.fixture_id == tbl.Fixture.id
             ).where(
                 tbl.PlayerFixture.player_id == player.id
+            ).where(
+                tbl.Fixture.kickoff_time > self.today_date
             )
         ).all()
 
@@ -74,24 +80,17 @@ class ModelPredictions(Job):
         
             
 
-    ## Select all players with the current player season.
-
-    ## For each player:
-        ## select their previous X performances. 
-        ## take a mean of those performances
-        ## get their fixtures
-        ## insert prediction into those fixtures.
-
-
-    ## Get the 
-
-
-    ## For
 
     def run(self):
-        pass
-        # players = self.get_current_players().all()
-        # for player in players:
-        #     performances = self.get_player_recent_peformances(player)
+        players = self.get_current_players()
+        for player in players:
+            performances = self.get_player_recent_peformances(player)
+            if performances:
+                prediction = self.calculate_mean(list(performances))
+                future_fixture_ids = self.get_player_future_fixtures(player)
+                self.update_future_fixture_predictions(
+                    player_fixture_ids=list(future_fixture_ids), 
+                    prediction = prediction
+                )
             
             
