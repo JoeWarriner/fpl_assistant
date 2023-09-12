@@ -144,6 +144,7 @@ class PlayerFixtureAdapter(Adapter):
         self.player_id = get_player_id(self.input.element)
         self.opposition_id = self.get_opposition()
         self.team_id = self.get_team_played_for()
+        self.predicted_score = None
     
 
     def get_team_played_for(self):

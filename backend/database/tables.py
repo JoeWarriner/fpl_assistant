@@ -1,5 +1,5 @@
 
-from sqlalchemy import Column, Integer, Boolean, String, TIMESTAMP, ForeignKey,  UniqueConstraint
+from sqlalchemy import Column, Integer, Boolean, String, TIMESTAMP, ForeignKey,  UniqueConstraint, Float
 from sqlalchemy.orm import relationship, DeclarativeBase
 
 class Base(DeclarativeBase):
@@ -132,6 +132,7 @@ class PlayerFixture(Base):
     player_id = Column(Integer, ForeignKey('players.id'))
     team_id = Column(Integer, ForeignKey('teams.id'))
     opposition_id = Column(Integer, ForeignKey('teams.id')) 
+    predicted_score = Column(Float, nullable=True)
     is_home = Column(Boolean)
 
     team = relationship('Team', foreign_keys=team_id, backref="team_player_fixtures")

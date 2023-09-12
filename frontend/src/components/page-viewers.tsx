@@ -30,6 +30,6 @@ export function PlayerPageViewer(){
         </div>
     )
 
-
+        
 
 }
