@@ -1,0 +1,4 @@
+testing_notes,id,fixture_id,player_id,team_id,opposition_id,minutes_played,penalties_missed,penalties_saved,player_value,red_cards,yellow_cards,selected,total_points,goals_scored,goals_conceded,clean_sheet,bonus,assists,was_home
+"Alisson, SOU-LIV, 21-22, GW37, FPL fx321",1,1,2,2,4,90,0,0,61,0,0,838655,3,0,1,TRUE,0,0,FALSE
+"Alisson, AVL-LIV, 21-22, GW36, FPL fx366",2,2,2,2,5,90,0,0,61,0,0,828151,2,0,1,TRUE,0,0,FALSE
+"Alisson, LIV-WOL, 21-22, GW38, FPL fx378",3,3,2,2,3,90,0,0,61,0,0,875997,3,0,1,TRUE,0,0,TRUE
