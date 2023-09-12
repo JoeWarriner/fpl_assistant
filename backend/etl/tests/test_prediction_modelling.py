@@ -6,6 +6,7 @@ from etl.modelling.prediction_modelling import ModelPredictions
 from etl.imports.initial_import import InitialImport
 from database.data_access_layer import dal
 import database.tables as tbl
+from datetime import datetime
 from sqlalchemy import select
 
 @pytest.fixture
@@ -27,11 +28,26 @@ def test_get_player_recent_performances(populated_database):
     assert performances[0] == 3
     assert performances[1] == 3
 
+def test_calculate_mean():
+    performances = [2,3,3]
+    prediction_job = ModelPredictions()
+    mean = prediction_job.calculate_mean(performances)
+    assert f'{mean:.2f}' == '2.67'
+
+def test_get_player_future_fixture_ids(populated_database):
+    prediction_job = ModelPredictions()
+    alisson = dal.session.scalar(select(tbl.Player).where(tbl.Player.id == 2))
+    player_fixtures = prediction_job.get_player_future_fixtures(alisson, datetime(2022, 8, 1))
+    assert len(player_fixtures) == 2
+    
+
+
 def test_prediction_output(run_prediction_model):
     """
     Test of basic prediction model - prediction should be mean of previous 3 scores, 
     rounded 2 2DP.
     """
+    pass
     
     alisson_fixture_1 = dal.session.scalar(
         select(tbl.PlayerFixture).where(tbl.PlayerFixture.id == 1)

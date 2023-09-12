@@ -2,7 +2,9 @@ from etl.jobs.base_job import Job
 
 from database.data_access_layer import dal
 import database.tables as tbl
-from sqlalchemy import select, Result, Tuple, Sequence
+from sqlalchemy import select, Result, Tuple, Sequence, update
+from decimal import Decimal
+from datetime import datetime
 
 class ModelPredictions(Job):
     window_size = 10
@@ -38,7 +40,36 @@ class ModelPredictions(Job):
 
         return result
 
+    def calculate_mean(self, player_performances: list[int]) -> float: 
+        sum = 0
+        for performance in player_performances:
+            sum += performance
+        mean = sum / len(player_performances)
 
+        return mean
+    
+    def get_player_future_fixtures(self, player: tbl.Player, today_date = datetime.now()):
+        output = dal.session.scalars(
+            select(
+                tbl.PlayerFixture.id
+            ).select_from(
+                tbl.PlayerFixture
+            ).join(
+                tbl.Fixture, tbl.PlayerFixture.fixture_id == tbl.Fixture.id
+            ).where(
+                tbl.PlayerFixture.player_id == player.id
+            )
+        ).all()
+
+        return output
+    
+    
+    # def update_future_fixture_predictions(self, player: tbl.Player, prediction: float):
+    #     update(tbl.PlayerFixture).join(
+
+    #     ).where(
+    #         tbl.PlayerFixture.player_id
+    #     )
 
     ## Select all players with the current player season.
 
@@ -55,8 +86,9 @@ class ModelPredictions(Job):
     ## For
 
     def run(self):
-        players = self.get_current_players().all()
-        for player in players:
-            performances = self.get_player_recent_peformances(player)
+        pass
+        # players = self.get_current_players().all()
+        # for player in players:
+        #     performances = self.get_player_recent_peformances(player)
             
             
