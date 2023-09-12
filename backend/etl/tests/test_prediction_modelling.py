@@ -2,7 +2,7 @@ import pytest
 
 from database.test_utils import populated_database
 
-from etl.imports.prediction_modelling import ModelPredictions
+from etl.modelling.prediction_modelling import ModelPredictions
 from etl.imports.initial_import import InitialImport
 from database.data_access_layer import dal
 import database.tables as tbl
@@ -14,6 +14,10 @@ def run_prediction_model(populated_database):
     prediction_job.window_size = 3
     prediction_job.run()
 
+def test_get_current_players(populated_database):
+    prediction_job = ModelPredictions()
+    players = prediction_job.get_current_players().all()
+    assert len(players) == 2
 
 def test_prediction_output(run_prediction_model):
     """
