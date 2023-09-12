@@ -8,6 +8,7 @@ import etl.jobs.extractors.api.api_models as api_models
 import etl.jobs.extractors.api_extractors as extractor
 import etl.jobs.transformers.api_transformers as api_transformers
 import etl.jobs.loaders.loaders as loaders
+from etl.modelling.prediction_modelling import ModelPredictions
 from etl.jobs.extractors.api.api_download import APIDownloader
 from etl.utils.file_handlers import ProjectFiles
 
@@ -90,6 +91,8 @@ class RegularImport(Job):
                 transformer= api_transformers.APITransformer(adapter=api_transformers.PlayerPerformanceAdapter),
                 loader = loaders.DBLoader(tbl.PlayerPerformance)
         )
+
+        self.update_player_predictions = ModelPredictions()
     
     
     def pipeline(self):
@@ -104,6 +107,7 @@ class RegularImport(Job):
         pipeline.add_task(self.player_seasons, predecessors={self.team_seasons, self.seasons, self.players})
         pipeline.add_task(self.player_fixtures, predecessors={self.player_seasons, self.fixtures})
         pipeline.add_task(self.player_performances, predecessors = {self.player_seasons, self.fixtures})
+        pipeline.add_task(self.update_player_predictions, predecessors = {self.player_performances, self.player_fixtures})
         return pipeline
 
     def run(self):

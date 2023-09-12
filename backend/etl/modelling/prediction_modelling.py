@@ -85,7 +85,7 @@ class ModelPredictions(Job):
         players = self.get_current_players()
         for player in players:
             performances = self.get_player_recent_peformances(player)
-            if performances:
+            if len(performances) > 10:
                 prediction = self.calculate_mean(list(performances))
                 future_fixture_ids = self.get_player_future_fixtures(player)
                 self.update_future_fixture_predictions(
