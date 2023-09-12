@@ -2,7 +2,7 @@ from etl.jobs.base_job import Job
 
 from database.data_access_layer import dal
 import database.tables as tbl
-from sqlalchemy import select, Result, Tuple
+from sqlalchemy import select, Result, Tuple, Sequence
 
 class ModelPredictions(Job):
     window_size = 10
@@ -19,6 +19,25 @@ class ModelPredictions(Job):
                 tbl.Season.is_current == True
             ))
         return result
+    
+
+    def get_player_recent_peformances(self, player: tbl.Player, number = 10) -> Sequence[int]:
+        result = dal.session.scalars(
+            select(
+                tbl.PlayerPerformance.total_points
+            ).join(
+                tbl.Fixture, tbl.PlayerPerformance.fixture_id == tbl.Fixture.id
+            ).where(
+                tbl.PlayerPerformance.player_id == player.id
+            ).where(
+                tbl.PlayerPerformance.minutes_played > 60
+            ).order_by(
+                tbl.Fixture.kickoff_time.desc()
+            )
+        ).fetchmany(number)
+
+        return result
+
 
 
     ## Select all players with the current player season.
@@ -36,4 +55,8 @@ class ModelPredictions(Job):
     ## For
 
     def run(self):
-        pass
+        players = self.get_current_players().all()
+        for player in players:
+            performances = self.get_player_recent_peformances(player)
+            
+            
