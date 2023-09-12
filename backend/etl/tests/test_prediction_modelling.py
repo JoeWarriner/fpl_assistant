@@ -40,7 +40,19 @@ def test_get_player_future_fixture_ids(populated_database):
     player_fixtures = prediction_job.get_player_future_fixtures(alisson, datetime(2022, 8, 1))
     assert len(player_fixtures) == 2
     
+def test_update_future_fixture_predictions(populated_database):
+    prediction_job = ModelPredictions()
+    prediction = 2.666667
+    prediction_job.update_future_fixture_predictions(
+        player_fixture_ids=[1,2], 
+        prediction = prediction
+    )
+    fixture_1 = dal.session.scalars(
+        select(tbl.PlayerFixture)
+        .where(tbl.PlayerFixture.id == 1)
+    ).one()
 
+    assert fixture_1.predicted_score == prediction
 
 def test_prediction_output(run_prediction_model):
     """
