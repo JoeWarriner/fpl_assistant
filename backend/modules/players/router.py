@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from modules.players.models import Player
+from modules.shared_models import Player
 from modules.players.db import get_players
 
 router = APIRouter(
@@ -12,3 +12,4 @@ router = APIRouter(
 async def players(offset: int = 0, pagesize: int = 10):
     players = get_players(offset, pagesize)
     return players
+

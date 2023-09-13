@@ -1,6 +1,6 @@
 import pytest
 import modules.team_selector.db as db
-from modules.team_selector.models import Player
+from modules.shared_models import Player
 from database.test_utils import populated_database_with_predictions
 import pandas as pd
 
