@@ -8,7 +8,7 @@ from sqlalchemy import select
 
 def get_player_data() -> pd.DataFrame:
 
-    output = dal.session.execute(
+    output = dal.execute(
         select(
             tbl.Player.id,
             tbl.Player.current_value,

@@ -18,4 +18,22 @@ class DataAccessLayer:
         Base.metadata.drop_all(self.engine)
         Base.metadata.create_all(self.engine)
 
+    def execute(self, statement):
+        """Execute single statement as transaction."""
+        try:
+            output = self.session.execute(statement)
+        except Exception as e:
+            self.session.rollback()
+            raise Exception from e
+        else:
+            self.session.commit()
+            return output
+        
+
+
+
+
+
+
 dal = DataAccessLayer() 
+

@@ -7,7 +7,7 @@ import modules.shared_queries as queries
 
 
 def get_players(offset: int, page_size: int) -> list[Player]:
-    players = dal.session.execute(
+    players = dal.execute(
             queries.PLAYERS.offset(offset).limit(page_size)
         ).all()
 
