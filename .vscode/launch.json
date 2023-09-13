@@ -19,6 +19,26 @@
             "module": "pytest",
             "args": ["~/Projects/fantasy_football_assistant/backend/modules"],
             "justMyCode": true
-        }
+        },
+        {
+            "name": "API Test",
+            "type": "python",
+            "request": "launch",
+            "module": "uvicorn",
+            "cwd": "~/Projects/fantasy_football_assistant/backend",
+            "args": ["main:app"],
+            "justMyCode": true
+        },
+        {
+            "name": "DB update script",
+            "type": "python",
+            "request": "launch",
+            "cwd": "~/Projects/fantasy_football_assistant/backend",
+            "program": "admin.py",
+            "args": ["update"],
+            "justMyCode": true
+        },
+
+
     ]
 }
