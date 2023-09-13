@@ -8,6 +8,7 @@
 import os
 import sys
 from pathlib import Path
+import numpy as np
 
 
 backend_path = Path(__file__).parents[2]
@@ -19,6 +20,7 @@ import database.tables as tbl
 
 from sqlalchemy import select
 from sklearn.ensemble  import RandomForestClassifier
+from sklearn.metrics import mean_absolute_error, mean_squared_error, median_absolute_error
 import pandas as pd
 
 
@@ -108,13 +110,13 @@ def calculate_rolling_means(data, window_size):
         grouped_data = (data
             .groupby(level ='player_id')
             )
-        rolling = (grouped_data[COLUMNS_TO_AGGREGATE]
+        columns = COLUMNS_TO_AGGREGATE + ['total_points']
+        rolling = (grouped_data[columns]
                 .rolling(window = window_size + 1, closed = 'left'))
         rolling_mean =  rolling.mean().droplevel(0)
         assert len(rolling_mean) == len(data.index) 
         data = data.join(rolling_mean, rsuffix = f'_{window_size}_game_mean')
         return data
-
 
 def clean_data(data):
     """
@@ -170,15 +172,6 @@ def get_feature_set(full_dataset: pd.DataFrame):
     return feature_set
 
 
-COLUMNS_TO_PREDICT = [
-        'assists',
-        'goals_scored',
-        'goals_conceded',
-        'clean_sheet',
-        'bonus',
-        'yellow_cards',
-        'saves'
-]
 
 
     
@@ -231,11 +224,27 @@ def get_points_from_goals_conceded(expected_goals_conceded, position):
         raise ValueError(f'Position type {position} not recognised')
 
 
+COLUMN_POINTS_MAP = {
+        'assists': get_expected_points_from_assists,
+        'goals_scored': get_expected_points_from_goals,
+        'goals_conceded': get_points_from_goals_conceded,
+        'clean_sheet': get_expected_points_from_clean_sheets,
+        'bonus': get_bonus_points,
+        'yellow_cards': get_points_from_yellows,
+        'saves': get_expected_points_from_saves
+}
+
+
     
 
+def calculate_mae(target: pd.Series, prediction: pd.Series):
+    assert len(target) == len(prediction)
+    return np.sum(np.abs(target - prediction)) / len(target)
 
+def calculate_mse(target: pd.Series, prediction: pd.Series):
 
-
+    return np.sum((target - prediction) * (target - prediction)) / len(target)
+    
 
 if __name__ == '__main__':
     generate_data()
@@ -247,7 +256,7 @@ if __name__ == '__main__':
 
 
 
-    for column in COLUMNS_TO_PREDICT:
+    for column in list(COLUMN_POINTS_MAP.keys()):
 
         print(f'Starting prediction for: {column}')
         classifier = RandomForestClassifier(n_estimators=100)
@@ -258,21 +267,63 @@ if __name__ == '__main__':
         print(f'Mean accuracy is: {score}')
 
         print(f'Processing predictions:')
-        predicted_probs = classifier.predict_proba(training_feature_set)
-        columns = [f'prob_{column}_{i}' for i in range(len(predicted_probs[0]))]
         
+        
+        predicted_probs: list[list[int]] = classifier.predict_proba(test_feature_set)
+        
+        
+        expected_values = []
+        for row in predicted_probs:
+            expected_value = 0
+            for i, prob in enumerate(row):
+                expected_value += i * prob
+            expected_values.append(expected_value)
+        
+        
+        ## Add pprobabilities to df:
+        column_names = [f'prob_{column}_{i}' for i in range(len(predicted_probs[0]))]
         probs_df = pd.DataFrame(
-            columns = columns,
+            columns= column_names,
             data = predicted_probs
         )
-        print(probs_df)
-        for col in columns:
-            print(probs_df[col])
-            test_data[col] = probs_df[col]
-            print(test_data[col])
 
-    test_data.to_csv('test_data_with_probablities.csv')
-            
+        for col in column_names:
+            test_data[col] = probs_df[col]
+
+        expected_col_name = f'expected_{column}'
+        test_data[f'expected_{column}'] = expected_values
+        
+    
+
+
+    expected_points_list = []
+    for _, row in test_data.iterrows():
+        expected_points = 0
+        for column, points_func in COLUMN_POINTS_MAP.items():
+            expected_points += points_func(row[f'expected_{column}'], row['position'])
+        expected_points_list.append(expected_points)
+    test_data['expected_points'] = expected_points_list
+
+    ## How did we do?
+    
+    model_mae = calculate_mae(test_data['total_points'], test_data['expected_points'])
+    model_mse = calculate_mse(test_data['total_points'], test_data['expected_points'])
+    
+    print(f"MODEL MAE (sklearn): {mean_absolute_error(test_data['total_points'], test_data['expected_points'])}")
+    print(f"MODEL MSE (sklearn): {mean_squared_error(test_data['total_points'], test_data['expected_points'])}")
+    print(f"MODEL Median AE (sklearn): {median_absolute_error(test_data['total_points'], test_data['expected_points'])}")
+
+
+    rolling_mean_mae = calculate_mae(test_data['total_points'], test_data['total_points_10_game_mean'])
+    rolling_mean_mse = calculate_mse(test_data['total_points'], test_data['total_points_10_game_mean'])
+
+    print(f'ROLLING MEAN MAE: {rolling_mean_mae}')
+    print(f'ROLLING MEAN MSE: {rolling_mean_mse}')
+    print(f"ROLLING MEAN Median AE (sklearn): {median_absolute_error(test_data['total_points'], test_data['total_points_10_game_mean'])}")
+
+    
+    
+    test_data.to_csv('test_data_with_probablities.csv')       
 
             
 
