@@ -25,17 +25,20 @@ export function PlayerTable(props: PlayerTableProps){
 
     return (
         <table>
-            <th>
+            <tr>
                 <th> First Name </th> 
                 <th> Second Name </th> 
                 <th> Position </th> 
-            </th>
+                <th> Team </th> 
+                <th> Value </th>
+                <th> Predicted Points </th> 
+            </tr>
             {players.map(
                 (player) => <PlayerRow
                     key={player.id} 
-                    first_name={player.first_name} 
-                    second_name={player.second_name}
-                    position={player.position} />
+                    player={player}
+
+                    />
  
             )
             }
