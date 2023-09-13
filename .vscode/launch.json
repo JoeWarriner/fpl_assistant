@@ -38,6 +38,15 @@
             "args": ["update"],
             "justMyCode": true
         },
+        
+        {
+            "name": "Launch Chrome against localhost",
+            "type": "chrome",
+            "request": "launch",
+            "url": "http://localhost:4000",
+            "webRoot": "${workspaceFolder}/frontend"  
+        }
+            
 
 
     ]
