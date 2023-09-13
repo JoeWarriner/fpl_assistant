@@ -135,7 +135,7 @@ def clean_data(data):
     
 
     data = data.dropna()
-    data = data.reset_index().set_index('performance_id')
+    data = data.reset_index()
     return data
 
 def split_training_and_test(data):
@@ -170,18 +170,116 @@ def get_feature_set(full_dataset: pd.DataFrame):
     return feature_set
 
 
+COLUMNS_TO_PREDICT = [
+        'assists',
+        'goals_scored',
+        'goals_conceded',
+        'clean_sheet',
+        'bonus',
+        'yellow_cards',
+        'saves'
+]
+
+
+    
+
+
+def get_expected_points_from_assists(expected_assists, *args, **kwargs):
+    return expected_assists * 3
+
+def get_expected_points_from_goals(expected_goals, position):
+    if position == 'GKP' or position == 'DEF':
+        return expected_goals * 6
+    elif position == 'MID':
+        return expected_goals * 5
+    elif position == 'FWD':
+        return expected_goals * 4
+    else:
+        raise ValueError(f'Position type {position} not recognised')
+    
+
+def get_expected_points_from_clean_sheets(expected_clean_sheets, position):
+    if position == 'GKP' or position == 'DEF':
+        return expected_clean_sheets * 4
+    elif position == 'MID':
+        return expected_clean_sheets * 1
+    elif position == 'FWD':
+        return 0
+    else:
+        raise ValueError(f'Position type {position} not recognised')
+
+def get_expected_points_from_saves(expected_saves, position):
+    if position == 'GKP':
+        return expected_saves / 3
+    elif position in ['MID', 'FWD', 'DEF']:
+        return 0
+    else:
+        raise ValueError(f'Position type {position} not recognised')
+    
+def get_bonus_points(expected_bonus_points, *args, **kwargs):
+    return expected_bonus_points
+
+def get_points_from_yellows(expected_yellows, *args, **kwargs):
+    return expected_yellows * -1
+
+def get_points_from_goals_conceded(expected_goals_conceded, position):
+    if position in ['GKP', 'DEF']:
+        return expected_goals_conceded * -0.5
+    elif position in ['MID', 'FWD']:
+        return 0
+    else:
+        raise ValueError(f'Position type {position} not recognised')
+
+
+    
+
 
 
 
 
 if __name__ == '__main__':
     generate_data()
-    test_data = pd.read_csv('test_data.csv', index_col='performance_id')
-    feature_set = get_feature_set(test_data)
-    y = test_data['goals_scored']
+    test_data = pd.read_csv('test_data.csv')
+    test_feature_set = get_feature_set(test_data)
+
+    training_data = pd.read_csv('training_data.csv')
+    training_feature_set = get_feature_set(training_data)
+
+
+
+    for column in COLUMNS_TO_PREDICT:
+
+        print(f'Starting prediction for: {column}')
+        classifier = RandomForestClassifier(n_estimators=100)
+        classifier.fit(training_feature_set, training_data[column])
+
+        print(f'Model fit complete, evaluating performance')
+        score = classifier.score(test_feature_set, test_data[column])
+        print(f'Mean accuracy is: {score}')
+
+        print(f'Processing predictions:')
+        predicted_probs = classifier.predict_proba(training_feature_set)
+        columns = [f'prob_{column}_{i}' for i in range(len(predicted_probs[0]))]
+        
+        probs_df = pd.DataFrame(
+            columns = columns,
+            data = predicted_probs
+        )
+        print(probs_df)
+        for col in columns:
+            print(probs_df[col])
+            test_data[col] = probs_df[col]
+            print(test_data[col])
+
+    test_data.to_csv('test_data_with_probablities.csv')
+            
+
+            
+
+        
+
+
     
-    classifier = RandomForestClassifier(n_estimators=1000)
-    classifier.fit(feature_set, y)
 
 
 
