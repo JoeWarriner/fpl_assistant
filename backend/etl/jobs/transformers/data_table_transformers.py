@@ -171,7 +171,7 @@ class FixturesTransformer(DataTableTransformer):
 class PlayerPerformanceTransformer(DataTableTransformer):
     def do_transformations(self, data: pd.DataFrame) -> pd.DataFrame:
 
-        fixtures_query = 'SELECT id as fixture, season_id, fpl_id as fpl_fixture_id, away_team_id, home_team_id from fixtures;'
+        fixtures_query = 'SELECT id as fixture, season_id, fpl_id as fpl_fixture_id, away_team_id, home_team_id, away_team_difficulty, home_team_difficulty from fixtures;'
         fixtures = pd.DataFrame(dal.session.execute(sqlalchemy.text(fixtures_query)).all())
 
         players_query = 'SELECT player_id, season_id, fpl_id as fpl_player_season_id from player_seasons;'
@@ -210,8 +210,11 @@ class PlayerPerformanceTransformer(DataTableTransformer):
                                 fixtures,
                                 left_on = ['fixture_id', 'season_id'],
                                 right_on = ['fpl_fixture_id', 'season_id'],
-                            ).drop(columns = ['fixture_id','fpl_fixture_id']
-                            ).rename(columns={'away_team_id': 'opposition_id', 'home_team_id': 'team_id'})
+                            ).drop(columns = ['fixture_id','fpl_fixture_id', 'away_team_difficulty']
+                            ).rename(columns={
+                                'away_team_id': 'opposition_id', 
+                                'home_team_id': 'team_id', 
+                                'home_team_difficulty': 'difficulty' })
         
 
         
@@ -222,10 +225,11 @@ class PlayerPerformanceTransformer(DataTableTransformer):
                                 fixtures,
                                 left_on = ['fixture_id', 'season_id'],
                                 right_on = ['fpl_fixture_id', 'season_id'],
-                            ).drop(columns = ['fixture_id','fpl_fixture_id']
+                            ).drop(columns = ['fixture_id','fpl_fixture_id', 'home_team_difficulty']
                             ).rename(columns={
                                 'away_team_id': 'team_id', 
-                                'home_team_id': 'opposition_id'
+                                'home_team_id': 'opposition_id',
+                                'away_team_difficulty': 'difficulty'
                             })            
         
 

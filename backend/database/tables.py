@@ -115,6 +115,7 @@ class PlayerPerformance(Base):
     bonus = Column(Integer)
     assists = Column(Integer)
     was_home = Column(Boolean)
+    difficulty = Column(Integer)
     
     fixture = relationship("Fixture", backref="player_performances")
     player = relationship("Player", back_populates="player_performances")
@@ -133,6 +134,7 @@ class PlayerFixture(Base):
     team_id = Column(Integer, ForeignKey('teams.id'))
     opposition_id = Column(Integer, ForeignKey('teams.id')) 
     predicted_score = Column(Float, nullable=True)
+    difficulty = Column(Integer)
     is_home = Column(Boolean)
 
     team = relationship('Team', foreign_keys=team_id, backref="team_player_fixtures")

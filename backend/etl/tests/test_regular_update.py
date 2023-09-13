@@ -311,7 +311,7 @@ def import_player_fixtures(import_fixtures):
 
 def player_fixture_test_query(season, second_name, opp):
     opposition = aliased(tbl.Team, name='opposition')
-    fixture, = dal.session.execute(
+    fixture = dal.session.scalars(
         select(
             tbl.PlayerFixture
         ).join(
@@ -343,6 +343,7 @@ def test_player_fixture_import(import_player_fixtures):
 
     fixture_1 = player_fixture_test_query(season='2023-24', second_name='Ramses Becker', opp='WOL')
     assert fixture_1.is_home == False
+    assert fixture_1.difficulty == 2
 
 
 @pytest.fixture
@@ -354,7 +355,7 @@ def import_player_performances(import_player_fixtures):
 
 def player_performances_test_query(season, second_name, opp):
     opposition = aliased(tbl.Team, name='opposition')
-    performance, = dal.session.execute(
+    performance = dal.session.scalars(
         select(
             tbl.PlayerPerformance
         ).join(
@@ -376,7 +377,7 @@ def player_performances_test_query(season, second_name, opp):
     return performance
 
 
-def test_player_fixture_import(import_player_performances):
+def test_player_performance_import(import_player_performances):
     import_player_performances.run()
 
     player_performances = dal.session.scalars(select(
@@ -399,6 +400,7 @@ def test_player_fixture_import(import_player_performances):
     assert performance_1.clean_sheet == True
     assert performance_1.bonus == 0
     assert performance_1.assists == 1
+    assert performance_1.difficulty == 2
 
 @pytest.fixture
 def run_prediction_modelling(import_player_performances):

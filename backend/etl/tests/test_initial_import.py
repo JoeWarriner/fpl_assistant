@@ -166,7 +166,8 @@ def query_player_performance(gameweek, season, first_name):
         select(
             tbl.Team.short_name,
             tbl.PlayerPerformance.was_home,
-            tbl.PlayerPerformance.total_points
+            tbl.PlayerPerformance.total_points,
+            tbl.PlayerPerformance.difficulty
         ).join(
             tbl.PlayerPerformance, tbl.PlayerPerformance.opposition_id == tbl.Team.id
         ).join(
@@ -189,8 +190,10 @@ def test_player_performances_import(player_performances_import):
     assert performance_1.short_name == 'ARS'
     assert performance_1.was_home == True
     assert performance_1.total_points == 1
+    assert performance_1.difficulty == 4
 
     performance_2 = query_player_performance(2, '2021-22', 'Emiliano')
     assert performance_2.short_name == 'MCI'
     assert performance_2.was_home == True
     assert performance_2.total_points == 5
+    assert performance_2.difficulty == 2

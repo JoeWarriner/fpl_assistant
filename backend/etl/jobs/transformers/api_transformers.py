@@ -144,10 +144,12 @@ class PlayerFixtureAdapter(Adapter):
 
 
     def transform(self):
-        self.fixture_id = get_fixture_id(self.input.id)
+        fixture = get_fixture(self.input.id)
+        self.fixture_id = fixture.id
         self.player_id = get_player_id(self.input.element)
-        self.opposition_id = self.get_opposition()
-        self.team_id = self.get_team_played_for()
+        self.opposition_id = fixture.away_team_id if self.input.is_home else fixture.home_team_id
+        self.team_id = fixture.home_team_id if self.input.is_home else fixture.away_team_id
+        self.difficulty = fixture.home_team_difficulty if self.input.is_home else fixture.away_team_difficulty
         self.predicted_score = None
     
 
@@ -169,10 +171,13 @@ class PlayerPerformanceAdapter(Adapter):
     table_ref = tbl.PlayerPerformance
     
     def transform(self):
-            self.fixture_id  = get_fixture_id(self.input.fixture)
+            fixture = get_fixture(self.input.fixture)
+
+            self.fixture_id  = fixture.id
             self.player_id = get_player_id(self.input.element)
-            self.team_id = self.get_team_played_for(self.fixture_id)
-            self.opposition_id = get_team(self.input.opponent_team)
+            self.team_id = fixture.home_team_id if self.input.was_home else fixture.away_team_id
+            self.opposition_id =  fixture.away_team_id if self.input.was_home else fixture.home_team_id
+            self.difficulty = fixture.home_team_difficulty if self.input.was_home else fixture.away_team_difficulty
             self.minutes_played = self.input.minutes
             self.clean_sheet = self.input.clean_sheets
             self.player_value = self.input.value
@@ -186,6 +191,14 @@ class PlayerPerformanceAdapter(Adapter):
 
         return dal.session.scalar(select(field).where(tbl.Fixture.id == fixture_id))
 
+
+def get_fixture( fixture_fpl_id):
+    return dal.session.scalars(
+        select(tbl.Fixture)
+        .join(tbl.Season, tbl.Season.id == tbl.Fixture.season_id)
+        .where(tbl.Fixture.fpl_id == fixture_fpl_id)
+        .where(tbl.Season.is_current == True)
+        ).one()
 
 ## DB FUNCTIONS:
  
