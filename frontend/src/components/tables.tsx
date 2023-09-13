@@ -1,24 +1,27 @@
 import type {Player} from '../types/player';
-import {getPlayers} from  '../services/backend';
+import {DataGetter} from  '../services/backend';
 import {PlayerRow} from './rows'
 import React, { useState, useEffect } from 'react';
+import { PlayerPageViewer } from './page-viewers';
 
 
-interface PagePosition {
+interface PlayerTableProps {
     offSet: number
+    pageSize: number
+    dataGetter: DataGetter
 }
 
-export function PlayerTable(props: PagePosition){
+export function PlayerTable(props: PlayerTableProps){
 
     const [players, setPlayers] = useState<Player[]>([]);
 
     React.useEffect(() => {
-        getPlayers(10, props.offSet).then((result) => {
+        props.dataGetter(props.pageSize, props.offSet).then((result) => {
             setPlayers(result);
         }).catch((error) => {
             console.log("Error fetching data", error);
         });
-    },[props.offSet]);
+    },[props]);
 
     return (
         <table>

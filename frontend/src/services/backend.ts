@@ -1,6 +1,7 @@
 import {Player} from '../types/player';
 
 
+export type DataGetter  = (pageSize: number, offSet: number) => Promise<Player[]>
 
 
 export const getPlayers = async (pageSize: number, offSet: number): Promise<Player[]> => {
@@ -17,9 +18,9 @@ export const getPlayers = async (pageSize: number, offSet: number): Promise<Play
 }
 
 
-export const getOptimalTeam = async () => {
+export const getOptimalTeam = async (pageSize: number, offSet: number) => {
     try {
-        const response = await fetch("http://127.0.0.1:8000/optimal-team");
+        const response = await fetch("http://127.0.0.1:8000/team-selector");
         const team: Player[] = await response.json() as Player[];
         return team;
     } catch (error)  {

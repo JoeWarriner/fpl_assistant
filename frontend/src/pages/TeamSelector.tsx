@@ -1,31 +1,20 @@
-import React, { useState, useEffect } from 'react';
-
-import type {Player} from '../types/player';
-import {PlayerRow } from '../components/rows';
 import { getOptimalTeam } from '../services/backend';
+import { PlayerTable } from '../components/tables';
 
 
 
 
 const TeamSelector = () => {
 
-    const [team, setTeam] = useState<Player[]>([]);
-    
-    useEffect(() => {
-        getOptimalTeam().then((result) => {
-            setTeam(result);
-         }).catch((error) => {
-            console.log("Error fetching data", error);
-         });
-    }, []);
-
     
     return (
         <>
-            <p>This is the team selector page. The best team is: </p>
-            <table>
-            {team.map((player) => PlayerRow(player) )}
-            </table>
+            <h1> Team Selector </h1>
+            < PlayerTable
+                dataGetter={getOptimalTeam}
+                pageSize={15}
+                offSet={0}
+                />
         </>
     );
 }

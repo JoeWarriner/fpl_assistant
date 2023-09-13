@@ -17,14 +17,21 @@ const getPlayersMock = async (pageSize: number, offSet: number): Promise<Player[
                         id: 1,
                         first_name: 'Billy',
                         second_name: 'Bob',
-                        position: 'DEF'
+                        position: 'DEF',
+                        team: 'ARS',
+                        predicted_score: 5,
+                        current_value: 5
+    
                     }
                 } else {
                     testPlayer = {
                         id: 2,
                         first_name: 'Sammy',
                         second_name: 'Ray',
-                        position: 'FWD'
+                        position: 'FWD',
+                        team: 'ARS',
+                        predicted_score: 5,
+                        current_value: 5
                     }
                 }
                 testPlayer ?
@@ -39,15 +46,17 @@ const getPlayersMock = async (pageSize: number, offSet: number): Promise<Player[
 }
 
 
-jest.spyOn(Backend, 'getPlayers').mockImplementation(getPlayersMock)
-
 
 it('player table offset 1', async () => {
     let table: renderer.ReactTestRenderer | undefined;
     
 
     await renderer.act(() => {
-            table = renderer.create(<PlayerTable offSet={1} />)
+            table = renderer.create(<PlayerTable 
+                                        offSet={1}
+                                        pageSize={1}
+                                        dataGetter={getPlayersMock} 
+                                    />)
     })
    
     
@@ -56,8 +65,12 @@ it('player table offset 1', async () => {
 
     
     await renderer.act(() => {
-        table = renderer.create(<PlayerTable offSet={2} />)
-    })
+        table = renderer.create(<PlayerTable 
+                    offSet={2}
+                    pageSize={1}
+                    dataGetter={getPlayersMock} 
+                />)
+            })
 
     tree = table?.toJSON()
     expect(tree).toMatchSnapshot();

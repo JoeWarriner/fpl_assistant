@@ -1,11 +1,17 @@
 import type {Player} from '../types/player';
-import {getPlayers} from  '../services/backend';
+import {DataGetter} from  '../services/backend';
 import {PlayerTable} from './tables'
 import Button from 'react-bootstrap/Button';
 import React, { useState, useEffect } from 'react';
 
 
-export function PlayerPageViewer(){
+
+interface PageViewerProps {
+    dataGetter: DataGetter,
+    pageSize: number
+}
+
+export function PlayerPageViewer(props: PageViewerProps){
 
     const [offSet, setOffSet] = useState<number>(0);
 
@@ -19,6 +25,8 @@ export function PlayerPageViewer(){
     return (
         <div>
             <PlayerTable 
+                dataGetter={props.dataGetter}
+                pageSize={props.pageSize}
                 offSet={offSet} 
             />
             <Button
