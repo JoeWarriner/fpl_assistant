@@ -89,7 +89,7 @@ class InitialImport(Job):
         pipeline.add_task(self.seasons)
         pipeline.add_task(self.players, predecessors={self.seasons})
         pipeline.add_task(self.teams, predecessors={self.seasons})
-        pipeline.add_task(self.player_seasons, predecessors={self.seasons, self.players, self.team_seasons})
+        pipeline.add_task(self.player_seasons, predecessors={self.seasons, self.players, self.team_seasons, self.positions})
         pipeline.add_task(self.team_seasons, predecessors={self.teams, self.seasons})
         pipeline.add_task(self.gameweeks, predecessors={self.seasons})
         pipeline.add_task(self.fixtures, predecessors={self.team_seasons, self.gameweeks})

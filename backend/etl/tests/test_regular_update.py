@@ -402,6 +402,15 @@ def test_player_performance_import(import_player_performances):
     assert performance_1.assists == 1
     assert performance_1.difficulty == 2
 
+    assert performance_1.influence == 30.6
+    assert performance_1.creativity == 84.8
+    assert performance_1.threat == 28.0
+    assert performance_1.expected_goals == 0.39
+    assert performance_1.expected_assists == 0.37
+    assert performance_1.expected_goals_conceded == 0.3
+    assert performance_1.bps == 25
+
+
 @pytest.fixture
 def run_prediction_modelling(import_player_performances):
     orchestrator = import_player_performances

@@ -116,6 +116,17 @@ class PlayerPerformance(Base):
     assists = Column(Integer)
     was_home = Column(Boolean)
     difficulty = Column(Integer)
+    saves = Column(Integer)
+    expected_goals = Column(Float)
+    expected_assists = Column(Float)
+    expected_goals_conceded = Column(Float)
+    influence = Column(Float)
+    creativity =  Column(Float)
+    threat = Column(Float)
+    bps = Column(Integer)
+    
+
+
     
     fixture = relationship("Fixture", backref="player_performances")
     player = relationship("Player", back_populates="player_performances")

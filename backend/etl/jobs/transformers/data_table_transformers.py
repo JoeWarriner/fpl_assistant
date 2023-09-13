@@ -194,7 +194,15 @@ class PlayerPerformanceTransformer(DataTableTransformer):
             'bonus',
             'assists',
             'was_home',
-            'season_id'
+            'season_id',
+            'saves',
+            'expected_goals',
+            'expected_assists',
+            'expected_goals_conceded',
+            'influence',
+            'creativity',
+            'threat',
+            'bps',
         ]
 
         player_performances_data  = data[player_performances_columns].rename(columns= {
@@ -216,9 +224,6 @@ class PlayerPerformanceTransformer(DataTableTransformer):
                                 'home_team_id': 'team_id', 
                                 'home_team_difficulty': 'difficulty' })
         
-
-        
-
         away_fixtures = player_performances_data[
                                 player_performances_data['was_home'] == False
                             ].merge(
@@ -232,7 +237,6 @@ class PlayerPerformanceTransformer(DataTableTransformer):
                                 'away_team_difficulty': 'difficulty'
                             })            
         
-
         player_performances_data = pd.concat([home_fixtures, away_fixtures]
                                 ).merge(players,
                                     left_on= ['element', 'season_id'],

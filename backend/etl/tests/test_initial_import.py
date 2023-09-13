@@ -167,8 +167,14 @@ def query_player_performance(gameweek, season, first_name):
             tbl.Team.short_name,
             tbl.PlayerPerformance.was_home,
             tbl.PlayerPerformance.total_points,
-            tbl.PlayerPerformance.difficulty
-        ).join(
+            tbl.PlayerPerformance.difficulty,
+            tbl.PlayerPerformance.expected_assists,
+            tbl.PlayerPerformance.expected_goals,
+            tbl.PlayerPerformance.bps
+        ).select_from(
+            tbl.Team
+        )
+        .join(
             tbl.PlayerPerformance, tbl.PlayerPerformance.opposition_id == tbl.Team.id
         ).join(
             tbl.Fixture, tbl.PlayerPerformance.fixture_id == tbl.Fixture.id
@@ -191,6 +197,9 @@ def test_player_performances_import(player_performances_import):
     assert performance_1.was_home == True
     assert performance_1.total_points == 1
     assert performance_1.difficulty == 4
+    assert performance_1.expected_goals == 5.6
+    assert performance_1.expected_assists == 1.1
+    assert performance_1.bps == 13
 
     performance_2 = query_player_performance(2, '2021-22', 'Emiliano')
     assert performance_2.short_name == 'MCI'

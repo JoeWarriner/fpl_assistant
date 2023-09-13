@@ -102,15 +102,15 @@ class PlayerPerformance(BaseModel):
     saves: int
     bonus: int
     bps: int
-    influence: str
-    creativity: str
-    threat: str
+    influence: float
+    creativity: float
+    threat: float
     ict_index: str
     starts: int
-    expected_goals: str
-    expected_assists: str
-    expected_goal_involvements: str
-    expected_goals_conceded: str
+    expected_goals: float
+    expected_assists: float
+    expected_goal_involvements: float
+    expected_goals_conceded: float
     value: int
     transfers_balance: int
     selected: int
