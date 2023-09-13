@@ -53,6 +53,7 @@ class ModelPredictions(Job):
         return mean
     
     def get_player_future_fixtures(self, player: tbl.Player):
+        
         output = dal.session.scalars(
             select(
                 tbl.PlayerFixture.id
@@ -66,7 +67,6 @@ class ModelPredictions(Job):
                 tbl.Fixture.kickoff_time > self.today_date
             )
         ).all()
-
         return output
     
     

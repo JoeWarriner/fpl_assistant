@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 
 import modules.players.router as players
+import modules.team_selector.router as team_selector
 import json
 
 app = FastAPI()
@@ -16,6 +17,7 @@ dal.session = dal.Session()
 
 app.add_middleware(CORSMiddleware, allow_origins=['*'])
 app.include_router(players.router)
+app.include_router(team_selector.router)
 
 @app.get('/best-team')
 async def best_team():

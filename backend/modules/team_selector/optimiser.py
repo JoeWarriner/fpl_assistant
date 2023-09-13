@@ -1,40 +1,5 @@
-from typing import Union
 import pulp
 import pandas as pd 
-
-from database.data_access_layer import dal
-import database.tables as tbl
-
-from sqlalchemy import select
-
-
-def get_player_data() -> pd.DataFrame:
-
-    output = dal.session.execute(
-        select(
-            tbl.Player.id,
-            tbl.Player.current_value,
-            tbl.PlayerFixture.predicted_score,
-            tbl.PlayerSeason.position_id,
-            tbl.PlayerFixture.team_id
-        ).select_from(
-            tbl.Player
-        ).join(
-            tbl.PlayerFixture, tbl.PlayerFixture.player_id == tbl.Player.id
-        ).join(
-            tbl.PlayerSeason, tbl.Player.id == tbl.PlayerSeason.player_id
-        ).join(
-            tbl.Fixture, tbl.Fixture.id == tbl.PlayerFixture.fixture_id
-        ).join(
-            tbl.Gameweek, tbl.Fixture.gameweek_id == tbl.Gameweek.id
-        ).where(
-            tbl.Gameweek.is_next == True
-        )).all()
-
-    return pd.DataFrame(output)
-
-    
-
 
 def get_optimised_team(player_data: pd.DataFrame) -> list[str]:
 

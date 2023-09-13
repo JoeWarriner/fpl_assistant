@@ -121,12 +121,15 @@ class FixtureAdapter(Adapter):
     table_ref = tbl.Fixture
 
     def transform(self):
-        self.gameweek_id = dal.session.scalar(select(tbl.Gameweek.id).where(tbl.Gameweek.gw_number  == self.input.event))
+        self.season_id = get_season()
+        self.gameweek_id = dal.session.scalar(select(tbl.Gameweek.id)
+                                              .where(tbl.Gameweek.gw_number == self.input.event)
+                                              .where(tbl.Gameweek.season_id == self.season_id)
+                                              )
         self.away_team_id = get_team(self.input.team_a)
         self.home_team_id = get_team(self.input.team_h)
         self.away_team_difficulty = self.input.team_a_difficulty
         self.home_team_difficulty = self.input.team_h_difficulty
-        self.season_id = get_season()
         self.away_team_score = self.input.team_a_score
         self.home_team_score = self.input.team_h_score
         self.fpl_id = self.input.id
@@ -202,16 +205,42 @@ def get_fixture_id(fixture_fpl_id: int):
 
 def get_player_id(player_fpl_season_id: int):
         return dal.session.scalar(
-            select(tbl.PlayerSeason.player_id
-                   ).join(tbl.PlayerSeason.season
-                          ).where(tbl.PlayerSeason.fpl_id == player_fpl_season_id and tbl.Season.is_current == True)
-                )    
+            select(
+                tbl.PlayerSeason.player_id
+            )
+            .select_from(
+                tbl.PlayerSeason
+            )
+            .join(
+                tbl.Season, tbl.Season.id == tbl.PlayerSeason.season_id
+            )
+            .where(tbl.PlayerSeason.fpl_id == player_fpl_season_id)
+            .where(tbl.Season.is_current == True)
+        )
+                
 
 def get_team(team_fpl_season_id: int):
     return dal.session.scalar(
-            select(tbl.Team.id
-                ).join(tbl.Team.team_seasons).join(tbl.TeamSeason.season
-                    ).where(tbl.TeamSeason.fpl_id == team_fpl_season_id and tbl.Season.is_current == True)
+            select(
+                tbl.Team.id
+            )
+            .select_from(
+                tbl.Team
+            )
+            .join(
+                tbl.TeamSeason,
+                tbl.TeamSeason.team_id == tbl.Team.id
+            )
+            .join(
+                tbl.Season,
+                tbl.TeamSeason.season_id == tbl.Season.id
+            )
+            .where(
+                tbl.TeamSeason.fpl_id == team_fpl_season_id 
+            )
+            .where(
+                tbl.Season.is_current == True
+            )
         )
 
 
