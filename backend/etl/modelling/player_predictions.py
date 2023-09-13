@@ -9,6 +9,7 @@ import os
 import sys
 from pathlib import Path
 
+
 backend_path = Path(__file__).parents[2]
 sys.path.append(os.getcwd())
 
@@ -17,7 +18,7 @@ from database.data_access_layer import dal
 import database.tables as tbl
 
 from sqlalchemy import select
-
+from sklearn.ensemble  import RandomForestClassifier
 import pandas as pd
 
 
@@ -93,6 +94,8 @@ COLUMNS_TO_AGGREGATE = [
             'creativity'
         ]
 
+WINDOW_SIZES = [5, 10]
+
 
 
 def calculate_rolling_means(data, window_size):
@@ -127,12 +130,12 @@ def clean_data(data):
 
     data = data.set_index(['player_id', 'kickoff_time']).sort_index(inplace=False)
 
-    data = calculate_rolling_means(data, 5)
-    data = calculate_rolling_means(data, 10)
-    data = calculate_rolling_means(data, 18)
+    for n in WINDOW_SIZES:
+        data = calculate_rolling_means(data, n)
+    
 
-    data = data[data['goals_scored_5_game_mean'].notna()]
-
+    data = data.dropna()
+    data = data.reset_index().set_index('performance_id')
     return data
 
 def split_training_and_test(data):
@@ -150,9 +153,37 @@ def generate_data():
     test_data.to_csv('test_data.csv')
 
 
+def get_feature_set(full_dataset: pd.DataFrame):
+    feature_columns = []
+    for col in COLUMNS_TO_AGGREGATE:
+         for n in WINDOW_SIZES:
+              feature_columns.append(f'{col}_{n}_game_mean')
+    feature_columns.extend(
+        ['difficulty'],
+    )
+
+    feature_set = full_dataset[feature_columns]
+
+    position_dummies = pd.get_dummies(full_dataset['position'])
+    feature_set = feature_set.join(position_dummies)
+
+    return feature_set
+
+
+
+
 
 
 if __name__ == '__main__':
     generate_data()
+    test_data = pd.read_csv('test_data.csv', index_col='performance_id')
+    feature_set = get_feature_set(test_data)
+    y = test_data['goals_scored']
+    
+    classifier = RandomForestClassifier(n_estimators=1000)
+    classifier.fit(feature_set, y)
+
+
+
 
 
