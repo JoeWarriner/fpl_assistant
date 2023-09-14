@@ -18,7 +18,7 @@ class DataAccessLayer:
         Base.metadata.drop_all(self.engine)
         Base.metadata.create_all(self.engine)
 
-    def execute(self, statement):
+    def execute(self, statement):   
         """Execute single statement as transaction."""
         try:
             output = self.session.execute(statement)
@@ -29,9 +29,6 @@ class DataAccessLayer:
             self.session.commit()
             return output
         
-
-
-
 
 
 

@@ -79,8 +79,6 @@ class ModelPredictions(Job):
             )
         
             
-
-
     def run(self):
         players = self.get_current_players()
         for player in players:

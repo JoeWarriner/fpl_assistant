@@ -1,8 +1,13 @@
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy import update
+
 from database.data_access_layer import dal
+import database.tables as tbl
+
 from sqlalchemy.orm import  DeclarativeBase
 from etl.jobs.loaders.base_loader import Loader
 from etl.utils.logging import log
+
 
 
 class DBLoader(Loader):
@@ -31,4 +36,19 @@ class DBLoader(Loader):
             )
         dal.session.execute(insert_stmt)
         
-        
+
+
+class UpdatePredictions(Loader):
+
+    def run(self, data: dict[int, float]):
+        for player_fixture_id, predicted_score in data.items():
+            dal.session.execute(
+                update(
+                    tbl.PlayerFixture
+                )
+                .where(
+                    tbl.PlayerFixture.id == player_fixture_id
+                ).values(
+                    predicted_score = predicted_score
+                )
+            )
