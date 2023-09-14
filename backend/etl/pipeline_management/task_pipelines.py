@@ -3,6 +3,8 @@ from etl.jobs.extractors.data_table_extractor import Extractor
 from etl.jobs.transformers.base_transformer import Transformer
 from etl.jobs.loaders.base_loader import Loader
 
+from etl.jobs.base_job import Job
+
 from etl.pipeline_management.base_pipeline import Pipeline
 
 
@@ -26,6 +28,18 @@ class DataImportPipeline(Pipeline):
         return f'Import job for table: {self.loader.table}.'
 
 
+class ModellingPipeline(Pipeline):
+    task_serializer = SimpleSerializer
 
-
+    def __init__(self, model: Job, loader: Loader):
+        super().__init__()
+        self.model = model
+        self.loader = loader
     
+    def run(self):
+        self.add_task(self.model)
+        self.add_task(self.loader)
+        super().run()
+    
+    def __repr__(self) -> str:
+        return f'Modelling with: {self.model}.'

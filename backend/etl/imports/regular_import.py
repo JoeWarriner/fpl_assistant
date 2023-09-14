@@ -1,14 +1,14 @@
 from datetime import date
 import database.tables as tbl 
 from etl.jobs.base_job import Job
-from etl.pipeline_management.etl_pipeline import DataImportPipeline
+from etl.pipeline_management.task_pipelines import DataImportPipeline, ModellingPipeline
 from etl.pipeline_management.base_pipeline import Pipeline
 from etl.jobs.extractors.seasons_extractor import CreateThisSeason
 import etl.jobs.extractors.api.api_models as api_models
 import etl.jobs.extractors.api_extractors as extractor
 import etl.jobs.transformers.api_transformers as api_transformers
 import etl.jobs.loaders.loaders as loaders
-from etl.modelling.prediction_modelling import ModelPredictions
+from etl.modelling.prediction_modelling import SimpleRollingMeanPrediction
 from etl.jobs.extractors.api.api_download import APIDownloader
 from etl.utils.file_handlers import ProjectFiles
 
@@ -92,7 +92,10 @@ class RegularImport(Job):
                 loader = loaders.DBLoader(tbl.PlayerPerformance)
         )
 
-        self.update_player_predictions = ModelPredictions()
+        self.update_player_predictions = ModellingPipeline(
+            model= SimpleRollingMeanPrediction(), 
+            loader=loaders.UpdatePredictions()
+        )
     
     
     def pipeline(self):

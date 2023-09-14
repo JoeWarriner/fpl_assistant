@@ -6,8 +6,10 @@ from sqlalchemy import select, Result, Tuple, Sequence, update
 from decimal import Decimal
 from datetime import datetime
 
-class ModelPredictions(Job):
+class SimpleRollingMeanPrediction(Job):
     expects_input = False
+    winodw_size: int
+    today_date: datetime
 
     def __init__(self):
         self.window_size = 10
@@ -81,14 +83,16 @@ class ModelPredictions(Job):
             
     def run(self):
         players = self.get_current_players()
+        prediction_data = {}
         for player in players:
             performances = self.get_player_recent_peformances(player)
             if len(performances) == self.window_size:
                 prediction = self.calculate_mean(list(performances))
                 future_fixture_ids = self.get_player_future_fixtures(player)
-                self.update_future_fixture_predictions(
-                    player_fixture_ids=list(future_fixture_ids), 
-                    prediction = prediction
-                )
+                for fixture in future_fixture_ids:
+                    prediction_data[fixture] = prediction
+        return prediction_data
+        
+                
             
             

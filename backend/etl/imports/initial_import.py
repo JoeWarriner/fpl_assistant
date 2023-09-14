@@ -2,7 +2,7 @@ from datetime import date
 import database.tables as tbl 
 from pathlib import Path
 from etl.jobs.base_job import Job
-from etl.pipeline_management.etl_pipeline import DataImportPipeline
+from etl.pipeline_management.task_pipelines import DataImportPipeline
 from etl.pipeline_management.base_pipeline import Pipeline
 from etl.utils.paths import ProjectPaths
 import etl.jobs.extractors.seasons_extractor as seasons_extractor
