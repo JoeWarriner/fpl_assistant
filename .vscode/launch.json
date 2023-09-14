@@ -38,6 +38,14 @@
             "args": ["update"],
             "justMyCode": true
         },
+        {
+            "name": "Modelling",
+            "type": "python",
+            "request": "launch",
+            "cwd": "~/Projects/fantasy_football_assistant/backend",
+            "program": "etl/modelling/player_predictions.py",
+            "justMyCode": true
+        },
         
         {
             "name": "Launch Chrome against localhost",
