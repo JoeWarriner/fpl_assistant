@@ -9,7 +9,7 @@ import os
 import sys
 from pathlib import Path
 import numpy as np
-
+from datetime import datetime
 
 backend_path = Path(__file__).parents[2]
 sys.path.append(os.getcwd())
@@ -54,6 +54,9 @@ def get_data():
             tbl.PlayerPerformance.threat,
             tbl.PlayerPerformance.influence,
             tbl.PlayerPerformance.creativity,
+            tbl.PlayerPerformance.expected_assists,
+            tbl.PlayerPerformance.expected_goals,
+            tbl.PlayerPerformance.expected_goals_conceded,
 
             # Context data:
             tbl.PlayerPerformance.difficulty,
@@ -93,10 +96,13 @@ COLUMNS_TO_AGGREGATE = [
             'bps',
             'threat',
             'influence',
-            'creativity'
+            'creativity',
+            'expected_assists',
+            'expected_goals',
+            'expected_goals_conceded'
         ]
 
-WINDOW_SIZES = [5, 10]
+WINDOW_SIZES = [3, 5,7, 10]
 
 
 
@@ -142,8 +148,8 @@ def clean_data(data):
 
 def split_training_and_test(data):
     ## Break into training and test data:
-    training_data = data[data['season_start_year'] <= 2021]
-    test_data = data[data['season_start_year'] == 2022]
+    training_data = data[data['kickoff_time'] <= datetime(2023,4,15)]
+    test_data = data[data['kickoff_time'] > datetime(2023,4,15)]
     return training_data, test_data
 
 
@@ -164,6 +170,8 @@ def get_feature_set(full_dataset: pd.DataFrame):
         ['difficulty'],
     )
 
+
+    # print(feature_columns)
     feature_set = full_dataset[feature_columns]
 
     position_dummies = pd.get_dummies(full_dataset['position'])
@@ -259,13 +267,13 @@ if __name__ == '__main__':
     for column in list(COLUMN_POINTS_MAP.keys()):
 
         print(f'Starting prediction for: {column}')
-        classifier = RandomForestClassifier(n_estimators=100)
+        classifier = RandomForestClassifier(n_estimators=200)
         classifier.fit(training_feature_set, training_data[column])
 
         print(f'Model fit complete, evaluating performance')
         score = classifier.score(test_feature_set, test_data[column])
         print(f'Mean accuracy is: {score}')
-
+        print(classifier.feature_importances_)
         print(f'Processing predictions:')
         
         
@@ -322,6 +330,31 @@ if __name__ == '__main__':
     print(f"ROLLING MEAN Median AE (sklearn): {median_absolute_error(test_data['total_points'], test_data['total_points_10_game_mean'])}")
 
     
+    actual_best_performances = test_data.sort_values(by = 'total_points')
+    predicted_best_performances = test_data.sort_values(by = 'expected_points')
+    mean_predicted_best_performances = test_data.sort_values(by = 'total_points_10_game_mean')
+
+    actual_best_performances = actual_best_performances.reset_index(drop = True).reset_index(names='ordering').set_index('performance_id')[['ordering', 'total_points']]
+    predicted_best_performances = predicted_best_performances.reset_index(drop = True).reset_index(names='ordering').set_index('performance_id')[['ordering', 'expected_points']]
+    mean_predicted_best_performances = mean_predicted_best_performances.reset_index(drop = True).reset_index(names='ordering').set_index('performance_id')[['ordering', 'total_points_10_game_mean']]
+    
+    actual_best_performances = actual_best_performances.join(predicted_best_performances, rsuffix='_predicted')
+    actual_best_performances = actual_best_performances.join(mean_predicted_best_performances, rsuffix='_baseline')
+
+    print(f'ORDERING MAE PREDICTION: {mean_absolute_error(actual_best_performances["ordering"], actual_best_performances["ordering_predicted"])}')
+    print(f'ORDERING median error PREDICTION: {median_absolute_error(actual_best_performances["ordering"], actual_best_performances["ordering_predicted"])}')
+    print(f'ORDERING MAE BASLINE: {mean_absolute_error(actual_best_performances["ordering"], actual_best_performances["ordering_baseline"])}')
+    print(f'ORDERING median error BASLINE: {median_absolute_error(actual_best_performances["ordering"], actual_best_performances["ordering_baseline"])}')
+
+    print(f'ORDERING MAE PREDICTION (TOP 100 ): {mean_absolute_error(actual_best_performances["ordering"].tail(100), actual_best_performances["ordering_predicted"].tail(100))}')
+    print(f'ORDERING MAE BASLINE (TOP 100): {mean_absolute_error(actual_best_performances["ordering"].tail(100), actual_best_performances["ordering_baseline"].tail(100))}')
+
+
+
+
+    
+
+
     
     test_data.to_csv('test_data_with_probablities.csv')       
 
