@@ -10,7 +10,8 @@ import sys
 from pathlib import Path
 import numpy as np
 from datetime import datetime
-
+from typing import Callable, Union
+from dataclasses import dataclass
 backend_path = Path(__file__).parents[2]
 sys.path.append(os.getcwd())
 
@@ -254,88 +255,283 @@ def calculate_mse(target: pd.Series, prediction: pd.Series):
     return np.sum((target - prediction) * (target - prediction)) / len(target)
     
 
-if __name__ == '__main__':
-    generate_data()
-    test_data = pd.read_csv('test_data.csv')
-    test_feature_set = get_feature_set(test_data)
 
-    training_data = pd.read_csv('training_data.csv')
-    training_feature_set = get_feature_set(training_data)
+def fit_underlying_model(
+        classifier: RandomForestClassifier, 
+        previous_performances: pd.DataFrame, 
+        feature_cols: list[str], 
+        col_to_predict: str):
+
+    feature_set = previous_performances[feature_cols]
+    dependent_var = previous_performances[col_to_predict]
+    classifier.fit(feature_set, dependent_var)
+    return classifier
+
+def process_future_fixtures(future_fixtures, previous_performances):
+    pass
 
 
 
-    for column in list(COLUMN_POINTS_MAP.keys()):
+class IndividualOutcomePredictor:
 
-        print(f'Starting prediction for: {column}')
-        classifier = RandomForestClassifier(n_estimators=200)
-        classifier.fit(training_feature_set, training_data[column])
-
-        print(f'Model fit complete, evaluating performance')
-        score = classifier.score(test_feature_set, test_data[column])
-        print(f'Mean accuracy is: {score}')
-        print(classifier.feature_importances_)
-        print(f'Processing predictions:')
+    def __init__(
+            self, 
+            classifier: RandomForestClassifier, 
+            previous_performances: pd.DataFrame, 
+            future_fixtures: pd.DataFrame,
+            generate_featureset: Callable[[pd.DataFrame], pd.DataFrame],  
+            calculate_points: Callable[[float, str], float],
+            col_to_predict: str, 
+            index_col: str
+        ):
         
-        
-        predicted_probs: list[list[int]] = classifier.predict_proba(test_feature_set)
-        
-        
-        expected_values = []
+        self.classifier = classifier
+        self.previous_performances = previous_performances
+        self.generate_featureset = generate_featureset
+        self.future_fixtures = future_fixtures
+        self.calculate_points = calculate_points
+        self.col_to_predict = col_to_predict
+        self.index_col = index_col 
+        self.expected_value_col_name = f'expected_num_{self.col_to_predict}'
+        self.expected_points_col_name = f'expected_points_from_{self.col_to_predict}'
+
+
+    def fit_model(self):
+        feature_set = self.generate_featureset(self.previous_performances)
+        target_col = self.previous_performances[self.col_to_predict]
+        self.classifier.fit(feature_set, target_col)
+
+
+
+    def predict_probabilities(self) -> list[list[int]]:
+        ## Get feature set
+        feature_set = self.generate_featureset(self.future_fixtures)
+        predicted_probs = self.classifier.predict_proba(feature_set)
+        return predicted_probs
+
+    def convert_predicted_probs_to_dataframe(self, predicted_probs):
+        # Add results to dataframe
+        column_names = [f'prob_{self.col_to_predict}_{i}' for i in range(len(predicted_probs[0]))]
+        probs_df = pd.DataFrame(
+            columns= column_names,
+            data = predicted_probs
+        )
+        return probs_df
+    
+
+    def calculate_expected_values(self, predicted_probs):
+        ## Calculate expected value from probabilites:
+        expected_values =  []
         for row in predicted_probs:
             expected_value = 0
             for i, prob in enumerate(row):
                 expected_value += i * prob
             expected_values.append(expected_value)
+        return expected_values
+    
+
+    def calculated_expected_points(self, expected_values):
+        expected_points = [
+            self.calculate_points(expected_value, position)
+            for expected_value, position 
+            in zip(expected_values, self.future_fixtures['position'])
+        ]
+        return expected_points
+    
+    def run(self):
+        self.fit_model()
+        predicted_probs = self.predict_probabilities()
+        expected_values = self.calculate_expected_values(predicted_probs)
+        expected_points = self.calculated_expected_points(expected_values)
+
+        output_df = self.convert_predicted_probs_to_dataframe(predicted_probs)
+        output_df[self.expected_value_col_name] = expected_values
+        output_df[self.expected_points_col_name] = expected_points
+        output_df[self.index_col] = self.future_fixtures[self.index_col]
+
+        return output_df, self.expected_points_col_name
+
+
+
+
+class EventsPredictor:
+
+    individual_predictors: list[IndividualOutcomePredictor]
+    previous_performances: pd.DataFrame
+    future_fixtures: pd.DataFrame
+    generate_featureset: Callable[[pd.DataFrame], pd.DataFrame]
+    index_col: str
+
+    def __init__(self, previous_performances: pd.DataFrame, future_fixtures: pd.DataFrame):
+        self.classifier = RandomForestClassifier
+        self.classifier_kwargs = {'n_estimators': 100}
+        self.previous_performances = previous_performances
+        self.future_fixtures = future_fixtures
+        self.generate_featureset = get_feature_set
+        self.index_col = 'performance_id'
+        
+
+    def generate_individual_predictors(self) -> list[IndividualOutcomePredictor]:
+        column_points_map = {
+            'assists': get_expected_points_from_assists,
+            'goals_scored': get_expected_points_from_goals,
+            'goals_conceded': get_points_from_goals_conceded,
+            'clean_sheet': get_expected_points_from_clean_sheets,
+            'bonus': get_bonus_points,
+            'yellow_cards': get_points_from_yellows,
+            'saves': get_expected_points_from_saves
+        }
+
+
+        individual_predictors =  [
+            IndividualOutcomePredictor(
+                classifier=self.classifier(**self.classifier_kwargs),
+                previous_performances=self.previous_performances,
+                future_fixtures=self.future_fixtures,
+                generate_featureset=self.generate_featureset,
+                index_col = self.index_col,
+
+                calculate_points= points_calculator,
+                col_to_predict= col
+                )
+
+                for col, points_calculator
+                in column_points_map.items()
+        ]   
+        return individual_predictors
+    
+    def run_individual_predictions(self, individual_predictors: list[IndividualOutcomePredictor]) -> tuple[list[pd.DataFrame], list[str]]:
+        probabilities_dfs: list[pd.DataFrame] = []
+        expected_points_cols: list[str] = []
+        for predictor in individual_predictors:
+            probs, expected_points_col = predictor.run()
+            expected_points_cols.append(expected_points_col)
+            probs.set_index(self.index_col, inplace=True)
+            probabilities_dfs.append(probs)
+
+        return probabilities_dfs, expected_points_cols
+    
+    def combine_individual_predictions(self, individual_predictions: list[pd.DataFrame]) -> pd.DataFrame:
+        self.future_fixtures.set_index(self.index_col, inplace=True)
+        output = self.future_fixtures.join(individual_predictions).reset_index(names='performance_id')
+        return output
+
+    def calculate_final_expected_points(self, predictions: pd.DataFrame, expected_points_cols: list[str]) -> pd.DataFrame:
+        first_col, *remaining_cols = expected_points_cols
+        predictions['total_expected_points'] = predictions[first_col]
+        for col in remaining_cols:
+            predictions['total_expected_points'] = predictions['total_expected_points'] + predictions[col]
+        return predictions
+    
+    def convert_to_output_format(self,predictions: pd.DataFrame):
+        output_dict = {}
+        for _, row in  predictions.iterrows(): 
+            output_dict[row[self.index_col]] = row['total_expected_points']
+        return output_dict
+    
+
+    def run(self):
+
+        individual_predictors = self.generate_individual_predictors()
+        individual_prediction_data, expected_points_cols = self.run_individual_predictions(individual_predictors)
+        combined_prediction_data = self.combine_individual_predictions(individual_prediction_data)
+        self.predictions = self.calculate_final_expected_points(combined_prediction_data, expected_points_cols)
+        output = self.convert_to_output_format(self.predictions)
+        return output
+
+
+
+        
+    # def run(self):
+    #     generate_data()
+
+    #     ### Save CSVs for visibility
+    #     test_data = pd.read_csv('test_data.csv')
+    #     test_feature_set = get_feature_set(test_data)
+    #     training_data = 
+    #     training_feature_set = get_feature_set(training_data)
+    
+
+
+
+
+
+
+
+if __name__ == "__main__":
+    generate_data()
+    test_data = pd.read_csv('test_data.csv')
+    training_data = pd.read_csv('training_data.csv')
+    predictor = EventsPredictor(previous_performances=training_data, future_fixtures=test_data)
+    _ = predictor.run()
+    model_output = predictor.predictions
+
+
+
+
+
+    # for column in list(COLUMN_POINTS_MAP.keys()):
+
+    #     print(f'Starting prediction for: {column}')
+    #     classifier = RandomForestClassifier(n_estimators=200)
+
+    #     classifier.fit(training_feature_set, training_data[column])
+
+    #     print(f'Model fit complete, evaluating performance')
+    #     score = classifier.score(test_feature_set, test_data[column])
+    #     print(f'Mean accuracy is: {score}')
+    #     print(classifier.feature_importances_)
+    #     print(f'Processing predictions:')
+        
+        
+        
+        
+
+    #     expected_values = []
+    #     for row in predicted_probs:
+    #         expected_value = 0
+    #         for i, prob in enumerate(row):
+    #             expected_value += i * prob
+    #         expected_values.append(expected_value)
         
         
         ## Add pprobabilities to df:
-        column_names = [f'prob_{column}_{i}' for i in range(len(predicted_probs[0]))]
-        probs_df = pd.DataFrame(
-            columns= column_names,
-            data = predicted_probs
-        )
-
-        for col in column_names:
-            test_data[col] = probs_df[col]
-
-        expected_col_name = f'expected_{column}'
-        test_data[f'expected_{column}'] = expected_values
         
-    
+        
 
 
-    expected_points_list = []
-    for _, row in test_data.iterrows():
-        expected_points = 0
-        for column, points_func in COLUMN_POINTS_MAP.items():
-            expected_points += points_func(row[f'expected_{column}'], row['position'])
-        expected_points_list.append(expected_points)
-    test_data['expected_points'] = expected_points_list
+    # expected_points_list = []
+    # for _, row in test_data.iterrows():
+    #     expected_points = 0
+    #     for column, points_func in COLUMN_POINTS_MAP.items():
+    #         expected_points += points_func(row[f'expected_{column}'], row['position'])
+    #     expected_points_list.append(expected_points)
+    # test_data['expected_points'] = expected_points_list
 
     ## How did we do?
     
-    model_mae = calculate_mae(test_data['total_points'], test_data['expected_points'])
-    model_mse = calculate_mse(test_data['total_points'], test_data['expected_points'])
+    model_mae = calculate_mae(model_output['total_points'], model_output['total_expected_points'])
+    model_mse = calculate_mse(model_output['total_points'], model_output['total_expected_points'])
     
-    print(f"MODEL MAE (sklearn): {mean_absolute_error(test_data['total_points'], test_data['expected_points'])}")
-    print(f"MODEL MSE (sklearn): {mean_squared_error(test_data['total_points'], test_data['expected_points'])}")
-    print(f"MODEL Median AE (sklearn): {median_absolute_error(test_data['total_points'], test_data['expected_points'])}")
+    print(f"MODEL MAE (sklearn): {mean_absolute_error(model_output['total_points'], model_output['total_expected_points'])}")
+    print(f"MODEL MSE (sklearn): {mean_squared_error(model_output['total_points'], model_output['total_expected_points'])}")
+    print(f"MODEL Median AE (sklearn): {median_absolute_error(model_output['total_points'], model_output['total_expected_points'])}")
 
 
-    rolling_mean_mae = calculate_mae(test_data['total_points'], test_data['total_points_10_game_mean'])
-    rolling_mean_mse = calculate_mse(test_data['total_points'], test_data['total_points_10_game_mean'])
+    rolling_mean_mae = calculate_mae(model_output['total_points'], model_output['total_points_10_game_mean'])
+    rolling_mean_mse = calculate_mse(model_output['total_points'], model_output['total_points_10_game_mean'])
 
     print(f'ROLLING MEAN MAE: {rolling_mean_mae}')
     print(f'ROLLING MEAN MSE: {rolling_mean_mse}')
-    print(f"ROLLING MEAN Median AE (sklearn): {median_absolute_error(test_data['total_points'], test_data['total_points_10_game_mean'])}")
+    print(f"ROLLING MEAN Median AE (sklearn): {median_absolute_error(model_output['total_points'], model_output['total_points_10_game_mean'])}")
 
     
-    actual_best_performances = test_data.sort_values(by = 'total_points')
-    predicted_best_performances = test_data.sort_values(by = 'expected_points')
-    mean_predicted_best_performances = test_data.sort_values(by = 'total_points_10_game_mean')
+    actual_best_performances = model_output.sort_values(by = 'total_points')
+    predicted_best_performances = model_output.sort_values(by = 'total_expected_points')
+    mean_predicted_best_performances = model_output.sort_values(by = 'total_points_10_game_mean')
 
     actual_best_performances = actual_best_performances.reset_index(drop = True).reset_index(names='ordering').set_index('performance_id')[['ordering', 'total_points']]
-    predicted_best_performances = predicted_best_performances.reset_index(drop = True).reset_index(names='ordering').set_index('performance_id')[['ordering', 'expected_points']]
+    predicted_best_performances = predicted_best_performances.reset_index(drop = True).reset_index(names='ordering').set_index('performance_id')[['ordering', 'total_expected_points']]
     mean_predicted_best_performances = mean_predicted_best_performances.reset_index(drop = True).reset_index(names='ordering').set_index('performance_id')[['ordering', 'total_points_10_game_mean']]
     
     actual_best_performances = actual_best_performances.join(predicted_best_performances, rsuffix='_predicted')
@@ -349,14 +545,10 @@ if __name__ == '__main__':
     print(f'ORDERING MAE PREDICTION (TOP 100 ): {mean_absolute_error(actual_best_performances["ordering"].tail(100), actual_best_performances["ordering_predicted"].tail(100))}')
     print(f'ORDERING MAE BASLINE (TOP 100): {mean_absolute_error(actual_best_performances["ordering"].tail(100), actual_best_performances["ordering_baseline"].tail(100))}')
 
+    model_output.to_csv('temp_test_data_with_probablities.csv')       
 
 
 
-    
-
-
-    
-    test_data.to_csv('test_data_with_probablities.csv')       
 
             
 

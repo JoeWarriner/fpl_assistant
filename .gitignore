@@ -2,3 +2,4 @@ venv/
 __pycache__
 files/
 db_logs.txt
+temp_*
