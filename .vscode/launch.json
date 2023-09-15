@@ -39,11 +39,11 @@
             "justMyCode": true
         },
         {
-            "name": "Modelling",
+            "name": "Random Forest",
             "type": "python",
             "request": "launch",
             "cwd": "~/Projects/fantasy_football_assistant/backend",
-            "program": "etl/modelling/player_predictions.py",
+            "program": "etl/modelling/random_forest.py",
             "justMyCode": true
         },
         

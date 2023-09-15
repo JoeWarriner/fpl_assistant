@@ -16,7 +16,7 @@ class SimpleSerializer(PipelineTaskSerializer):
 
 
 
-class DAGTopologicalSerializer(PipelineTaskSerializer):
+class TopologicalSerializer(PipelineTaskSerializer):
     def serialize(self):
     
         nodes_with_incoming_edges, nodes_without_incoming_edges = self._get_initial_node_lists()

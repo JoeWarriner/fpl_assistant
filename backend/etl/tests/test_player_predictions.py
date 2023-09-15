@@ -1,9 +1,9 @@
 import pytest
 
-from etl.modelling.player_predictions import EventsPredictor, IndividualOutcomePredictor, get_expected_points_from_goals
+from etl.modelling.random_forest import RandomForestCompositePredictor, IndividualOutcomePredictor, get_expected_points_from_goals
 import pandas as pd
 
-class TestEventsPredictor:
+class TestRandomForestCompositePredictor:
     def test_calculate_final_expected_points(self):
         test_df = pd.DataFrame(
             columns = ['a', 'b', 'c', 'd'],
@@ -13,7 +13,7 @@ class TestEventsPredictor:
             ]
         )
         test_cols = ['a', 'd']
-        predictor = EventsPredictor(previous_performances=None, future_fixtures = None)
+        predictor = RandomForestCompositePredictor()
         output = predictor.calculate_final_expected_points(test_df, test_cols)
 
         expected_output = pd.DataFrame(

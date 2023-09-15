@@ -4,7 +4,6 @@
 ## Run a random forest model!
 ## Integrate back into pipeline
 
-## Get access to imports
 import os
 import sys
 from pathlib import Path
@@ -12,27 +11,29 @@ import numpy as np
 from datetime import datetime
 from typing import Callable, Union
 from dataclasses import dataclass
-backend_path = Path(__file__).parents[2]
+
+## Get access to imports (assumes running from backend directory)
 sys.path.append(os.getcwd())
 
 
+from etl.jobs.base_job import Job
 from database.data_access_layer import dal
 import database.tables as tbl
 
 from sqlalchemy import select
-from sklearn.ensemble  import RandomForestClassifier
-from sklearn.metrics import mean_absolute_error, mean_squared_error, median_absolute_error
+from sklearn.ensemble  import RandomForestClassifier, RandomForestRegressor
+from sklearn.metrics import mean_absolute_error, mean_squared_error, median_absolute_error, r2_score
 import pandas as pd
 
 
 
-def get_data():
+def get_historic_performance_data():
     """
     Get the data we are going to need from the database.
     """
     dal.connect()
     dal.session = dal.Session()
-    all_performances = dal.execute(
+    all_performances = dal.execute_transaction(
         select(
             
             # Identifier
@@ -125,7 +126,7 @@ def calculate_rolling_means(data, window_size):
         data = data.join(rolling_mean, rsuffix = f'_{window_size}_game_mean')
         return data
 
-def clean_data(data):
+def clean_historic_data(data):
     """
     Clean data:
     - Limit to just games where player played more than 60 minutes.
@@ -142,27 +143,80 @@ def clean_data(data):
     for n in WINDOW_SIZES:
         data = calculate_rolling_means(data, n)
     
-
     data = data.dropna()
     data = data.reset_index()
     return data
 
-def split_training_and_test(data):
+def split_training_and_test(data: pd.DataFrame):
     ## Break into training and test data:
-    training_data = data[data['kickoff_time'] <= datetime(2023,4,15)]
-    test_data = data[data['kickoff_time'] > datetime(2023,4,15)]
+    training_data = data[data['kickoff_time'] <= datetime(2023,4,15)].reset_index()
+    test_data = data[data['kickoff_time'] > datetime(2023,4,15)].reset_index()
+
     return training_data, test_data
 
 
-def generate_data():
-    data = get_data()
-    data_with_features = clean_data(data)
+def generate_data_for_testing():
+    data = get_historic_performance_data()
+    data_with_features = clean_historic_data(data)
     training_data, test_data = split_training_and_test(data_with_features)
-    training_data.to_csv('training_data.csv')
-    test_data.to_csv('test_data.csv')
+    return test_data, training_data
 
 
-def get_feature_set(full_dataset: pd.DataFrame):
+def get_future_fixtures():
+    future_fixtures = dal.execute_transaction(select(
+        tbl.PlayerFixture.id.label('fixture_id'),
+        tbl.PlayerFixture.player_id,
+        tbl.PlayerFixture.difficulty,
+        tbl.Position.short_name.label('position')
+    ).select_from(
+        tbl.PlayerFixture
+    ).join(
+        tbl.Fixture, tbl.PlayerFixture.fixture_id == tbl.Fixture.id
+    ).join(
+        tbl.PlayerSeason,
+        (tbl.PlayerFixture.player_id == tbl.PlayerSeason.player_id) &
+        (tbl.PlayerSeason.season_id == tbl.Fixture.season_id)
+    ).join(
+        tbl.Position,
+        tbl.Position.id == tbl.PlayerSeason.position_id
+    ).where(
+        tbl.Fixture.kickoff_time > datetime.now()
+    ))
+    return pd.DataFrame(future_fixtures)
+
+def generate_data_for_production():
+    data = get_historic_performance_data()
+    training_data = clean_historic_data(data)
+
+    data = data[data['minutes_played'] > 60]
+    data = data.sort_values('kickoff_time')
+    recent_performances = data.groupby('player_id').tail(10)
+    n_performances = recent_performances.groupby('player_id').size()
+    players_with_10_performances = n_performances[n_performances == 10].index
+    data_to_analyse = recent_performances[recent_performances['player_id'].isin(players_with_10_performances)]
+
+
+    fixtures = get_future_fixtures()
+    assert fixtures['fixture_id'].is_unique
+    for window_size in WINDOW_SIZES:
+        agg_data = data_to_analyse.groupby('player_id').tail(window_size)
+        agg_data = agg_data.groupby('player_id')[COLUMNS_TO_AGGREGATE].mean()
+        suffix = f'_{window_size}_game_mean'
+        agg_data = agg_data.add_suffix(suffix)
+        agg_data = agg_data.reset_index() 
+        fixtures = fixtures.join(agg_data, on = 'player_id', rsuffix= suffix)
+    fixtures = fixtures.dropna().reset_index()
+    assert fixtures['fixture_id'].is_unique
+    return fixtures, training_data        
+        
+
+
+
+
+
+
+
+def get_feature_set(full_dataset: pd.DataFrame, additional_cols =[]):
     feature_columns = []
     for col in COLUMNS_TO_AGGREGATE:
          for n in WINDOW_SIZES:
@@ -171,6 +225,7 @@ def get_feature_set(full_dataset: pd.DataFrame):
         ['difficulty'],
     )
 
+    feature_columns.extend(additional_cols)
 
     # print(feature_columns)
     feature_set = full_dataset[feature_columns]
@@ -233,42 +288,7 @@ def get_points_from_goals_conceded(expected_goals_conceded, position):
         raise ValueError(f'Position type {position} not recognised')
 
 
-COLUMN_POINTS_MAP = {
-        'assists': get_expected_points_from_assists,
-        'goals_scored': get_expected_points_from_goals,
-        'goals_conceded': get_points_from_goals_conceded,
-        'clean_sheet': get_expected_points_from_clean_sheets,
-        'bonus': get_bonus_points,
-        'yellow_cards': get_points_from_yellows,
-        'saves': get_expected_points_from_saves
-}
 
-
-    
-
-def calculate_mae(target: pd.Series, prediction: pd.Series):
-    assert len(target) == len(prediction)
-    return np.sum(np.abs(target - prediction)) / len(target)
-
-def calculate_mse(target: pd.Series, prediction: pd.Series):
-
-    return np.sum((target - prediction) * (target - prediction)) / len(target)
-    
-
-
-def fit_underlying_model(
-        classifier: RandomForestClassifier, 
-        previous_performances: pd.DataFrame, 
-        feature_cols: list[str], 
-        col_to_predict: str):
-
-    feature_set = previous_performances[feature_cols]
-    dependent_var = previous_performances[col_to_predict]
-    classifier.fit(feature_set, dependent_var)
-    return classifier
-
-def process_future_fixtures(future_fixtures, previous_performances):
-    pass
 
 
 
@@ -354,7 +374,8 @@ class IndividualOutcomePredictor:
 
 
 
-class EventsPredictor:
+class RandomForestCompositePredictor(Job):
+    expects_input = False
 
     individual_predictors: list[IndividualOutcomePredictor]
     previous_performances: pd.DataFrame
@@ -362,13 +383,15 @@ class EventsPredictor:
     generate_featureset: Callable[[pd.DataFrame], pd.DataFrame]
     index_col: str
 
-    def __init__(self, previous_performances: pd.DataFrame, future_fixtures: pd.DataFrame):
+    def __init__(self, 
+                 index_col: str = 'fixture_id'
+        ):
+
         self.classifier = RandomForestClassifier
-        self.classifier_kwargs = {'n_estimators': 100}
-        self.previous_performances = previous_performances
-        self.future_fixtures = future_fixtures
+        self.classifier_kwargs = {'n_estimators': 500}
+        self.get_data = generate_data_for_production
         self.generate_featureset = get_feature_set
-        self.index_col = 'performance_id'
+        self.index_col = index_col
         
 
     def generate_individual_predictors(self) -> list[IndividualOutcomePredictor]:
@@ -413,7 +436,7 @@ class EventsPredictor:
     
     def combine_individual_predictions(self, individual_predictions: list[pd.DataFrame]) -> pd.DataFrame:
         self.future_fixtures.set_index(self.index_col, inplace=True)
-        output = self.future_fixtures.join(individual_predictions).reset_index(names='performance_id')
+        output = self.future_fixtures.join(individual_predictions).reset_index(names=self.index_col)
         return output
 
     def calculate_final_expected_points(self, predictions: pd.DataFrame, expected_points_cols: list[str]) -> pd.DataFrame:
@@ -431,7 +454,7 @@ class EventsPredictor:
     
 
     def run(self):
-
+        self.future_fixtures, self.previous_performances = self.get_data()
         individual_predictors = self.generate_individual_predictors()
         individual_prediction_data, expected_points_cols = self.run_individual_predictions(individual_predictors)
         combined_prediction_data = self.combine_individual_predictions(individual_prediction_data)
@@ -453,101 +476,104 @@ class EventsPredictor:
     
 
 
+"""
+MODEL TESTING (this code is not used in the application or pipeline.)
 
-
-
-
+"""
 
 if __name__ == "__main__":
-    generate_data()
-    test_data = pd.read_csv('test_data.csv')
-    training_data = pd.read_csv('training_data.csv')
-    predictor = EventsPredictor(previous_performances=training_data, future_fixtures=test_data)
+
+    # Run prediction with historic data split into training/test.
+    predictor = RandomForestCompositePredictor(
+        index_col = 'performance_id')
+    predictor.get_data = generate_data_for_testing
     _ = predictor.run()
     model_output = predictor.predictions
 
+    # Save to csv so we can inspect:
+    model_output.to_csv('temp__model_evaluation_results.csv') 
 
 
+    # ## How did we do? Basic MAE / MSE / Median absolute error
+    # Using the rolling mean as a baseline.
+    print(f"MODEL MAE : {mean_absolute_error(model_output['total_points'], model_output['total_expected_points'])}")
+    print(f"MODEL MSE : {mean_squared_error(model_output['total_points'], model_output['total_expected_points'])}")
+    print(f"MODEL Median Absolute Error: {median_absolute_error(model_output['total_points'], model_output['total_expected_points'])}")
+    print(f"MODEL R2: {r2_score(model_output['total_points'], model_output['total_expected_points'])}")
 
 
-    # for column in list(COLUMN_POINTS_MAP.keys()):
+    print(f'BASELINE MAE: {mean_absolute_error(model_output["total_points"], model_output["total_points_10_game_mean"])}')
+    print(f'BASELINEMSE: {mean_squared_error(model_output["total_points"], model_output["total_points_10_game_mean"])}')
+    print(f"BASELINE Median AE : {median_absolute_error(model_output['total_points'], model_output['total_points_10_game_mean'])}")
+    print(f"BASELINE R2: {r2_score(model_output['total_points'], model_output['total_points_10_game_mean'])}")
 
-    #     print(f'Starting prediction for: {column}')
-    #     classifier = RandomForestClassifier(n_estimators=200)
-
-    #     classifier.fit(training_feature_set, training_data[column])
-
-    #     print(f'Model fit complete, evaluating performance')
-    #     score = classifier.score(test_feature_set, test_data[column])
-    #     print(f'Mean accuracy is: {score}')
-    #     print(classifier.feature_importances_)
-    #     print(f'Processing predictions:')
-        
-        
-        
-        
-
-    #     expected_values = []
-    #     for row in predicted_probs:
-    #         expected_value = 0
-    #         for i, prob in enumerate(row):
-    #             expected_value += i * prob
-    #         expected_values.append(expected_value)
-        
-        
-        ## Add pprobabilities to df:
-        
-        
-
-
-    # expected_points_list = []
-    # for _, row in test_data.iterrows():
-    #     expected_points = 0
-    #     for column, points_func in COLUMN_POINTS_MAP.items():
-    #         expected_points += points_func(row[f'expected_{column}'], row['position'])
-    #     expected_points_list.append(expected_points)
-    # test_data['expected_points'] = expected_points_list
-
-    ## How did we do?
-    
-    model_mae = calculate_mae(model_output['total_points'], model_output['total_expected_points'])
-    model_mse = calculate_mse(model_output['total_points'], model_output['total_expected_points'])
-    
-    print(f"MODEL MAE (sklearn): {mean_absolute_error(model_output['total_points'], model_output['total_expected_points'])}")
-    print(f"MODEL MSE (sklearn): {mean_squared_error(model_output['total_points'], model_output['total_expected_points'])}")
-    print(f"MODEL Median AE (sklearn): {median_absolute_error(model_output['total_points'], model_output['total_expected_points'])}")
-
-
-    rolling_mean_mae = calculate_mae(model_output['total_points'], model_output['total_points_10_game_mean'])
-    rolling_mean_mse = calculate_mse(model_output['total_points'], model_output['total_points_10_game_mean'])
-
-    print(f'ROLLING MEAN MAE: {rolling_mean_mae}')
-    print(f'ROLLING MEAN MSE: {rolling_mean_mse}')
-    print(f"ROLLING MEAN Median AE (sklearn): {median_absolute_error(model_output['total_points'], model_output['total_points_10_game_mean'])}")
 
     
-    actual_best_performances = model_output.sort_values(by = 'total_points')
-    predicted_best_performances = model_output.sort_values(by = 'total_expected_points')
-    mean_predicted_best_performances = model_output.sort_values(by = 'total_points_10_game_mean')
+    #  I also wanted to look at how well the model RANKED performances 
+    #  (Ultimately we're more interested in differentating between performances than predicting their value precisely) 
 
-    actual_best_performances = actual_best_performances.reset_index(drop = True).reset_index(names='ordering').set_index('performance_id')[['ordering', 'total_points']]
-    predicted_best_performances = predicted_best_performances.reset_index(drop = True).reset_index(names='ordering').set_index('performance_id')[['ordering', 'total_expected_points']]
-    mean_predicted_best_performances = mean_predicted_best_performances.reset_index(drop = True).reset_index(names='ordering').set_index('performance_id')[['ordering', 'total_points_10_game_mean']]
+    # Sort by the different measures (model / baseline / actual)
+    ranking_cols = (
+        ('total_points','actual_ranking'),
+        ('total_expected_points', 'model_ranking'),
+        ('total_points_10_game_mean', 'baseline_ranking') 
+    )
+
+    for data_column, ranking_column in ranking_cols: 
+        model_output = (model_output
+                        .sort_values(by=data_column)
+                        .reset_index(drop = True)
+                        .reset_index(names = ranking_column))
+        
+    ## Print various metrics to console:
+    print(f'MODEL MAE (ORDERING): {mean_absolute_error(model_output["actual_ranking"], model_output["model_ranking"])}')
+    print(f'MODEL median absolute error (ORDERING): {median_absolute_error(model_output["actual_ranking"], model_output["model_ranking"])}')
+
+    print(f'BASELINE MAE (ORDERING): {mean_absolute_error(model_output["actual_ranking"], model_output["baseline_ranking"])}')
+    print(f'BASELINE median absolute error (ORDERING): {median_absolute_error(model_output["actual_ranking"], model_output["baseline_ranking"])}')
+
+    # How about just the highest performers?
+    print(f'MODEL MAE (ORDERING - TOP 100 ): {mean_absolute_error(model_output["actual_ranking"].tail(100), model_output["model_ranking"].tail(100))}')
+    print(f'BASELINE MAE (ORDERING - TOP 100): {mean_absolute_error(model_output["actual_ranking"].tail(100), model_output["baseline_ranking"].tail(100))}')
+
+
+    player_all_games = model_output.groupby('player_id')[['total_points', 'total_expected_points', 'total_points_10_game_mean']].sum()
+
+    print(f' MODEL MAE (ALL GAMES COMBINED):{mean_absolute_error(player_all_games["total_points"], player_all_games["total_expected_points"])}')
+    print(f' MODEL r2 (ALL GAMES COMBINED):{r2_score(player_all_games["total_points"], player_all_games["total_expected_points"])}')
     
-    actual_best_performances = actual_best_performances.join(predicted_best_performances, rsuffix='_predicted')
-    actual_best_performances = actual_best_performances.join(mean_predicted_best_performances, rsuffix='_baseline')
+    print(f' BASELINE MAE (ALL GAMES COMBINED):{mean_absolute_error(player_all_games["total_points"], player_all_games["total_points_10_game_mean"])}')
+    print(f' BASELINE r2 (ALL GAMES COMBINED):{r2_score(player_all_games["total_points"], player_all_games["total_points_10_game_mean"])}')
+    
 
-    print(f'ORDERING MAE PREDICTION: {mean_absolute_error(actual_best_performances["ordering"], actual_best_performances["ordering_predicted"])}')
-    print(f'ORDERING median error PREDICTION: {median_absolute_error(actual_best_performances["ordering"], actual_best_performances["ordering_predicted"])}')
-    print(f'ORDERING MAE BASLINE: {mean_absolute_error(actual_best_performances["ordering"], actual_best_performances["ordering_baseline"])}')
-    print(f'ORDERING median error BASLINE: {median_absolute_error(actual_best_performances["ordering"], actual_best_performances["ordering_baseline"])}')
-
-    print(f'ORDERING MAE PREDICTION (TOP 100 ): {mean_absolute_error(actual_best_performances["ordering"].tail(100), actual_best_performances["ordering_predicted"].tail(100))}')
-    print(f'ORDERING MAE BASLINE (TOP 100): {mean_absolute_error(actual_best_performances["ordering"].tail(100), actual_best_performances["ordering_baseline"].tail(100))}')
-
-    model_output.to_csv('temp_test_data_with_probablities.csv')       
+    
 
 
+
+    ## Try a random forest regressor:
+    test_data, training_data = generate_data_for_testing()
+
+    y = training_data['total_points']
+    extra_cols = [
+        'total_points_10_game_mean',
+        'total_points_7_game_mean',
+        'total_points_5_game_mean',
+        'total_points_3_game_mean',
+    ]
+
+    x = get_feature_set(training_data, extra_cols)
+    regressor = RandomForestRegressor(n_estimators=500)
+    regressor.fit(x, y)
+    
+
+    test_x = get_feature_set(test_data, extra_cols)
+    predictions = regressor.predict(test_x)
+
+
+    print(f"REGRESSOR MAE : {mean_absolute_error(test_data['total_points'], predictions)}")
+    print(f"REGRESSOR MSE : {mean_squared_error(test_data['total_points'], predictions)}")
+    print(f"REGRESSOR Median Absolute Error: {median_absolute_error(test_data['total_points'], predictions)}")
+    print(f"REGRESSOR R2: {r2_score(test_data['total_points'], predictions)}")
 
 
             

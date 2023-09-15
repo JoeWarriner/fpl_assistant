@@ -8,7 +8,7 @@ from sqlalchemy import select
 
 def get_player_data() -> pd.DataFrame:
 
-    output = dal.execute(
+    output = dal.execute_transaction(
         select(
             tbl.Player.id,
             tbl.Player.current_value,
@@ -49,7 +49,7 @@ def get_player_data() -> pd.DataFrame:
 def get_players_from_list(player_ids: list[int]) -> list[Player]:
     players = []
     for player_id in player_ids:
-        player_details = dal.session.execute(
+        player_details = dal.execute_transaction(
             queries.PLAYERS.where(tbl.Player.id == player_id)
         ).one()
         

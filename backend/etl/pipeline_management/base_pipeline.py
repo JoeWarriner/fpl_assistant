@@ -1,11 +1,11 @@
-from etl.pipeline_management.serializers import PipelineTaskSerializer, DAGTopologicalSerializer
+from etl.pipeline_management.serializers import PipelineTaskSerializer, TopologicalSerializer
 from etl.jobs.base_job import Job
 from etl.utils.logging import log
 
 
 class Pipeline(Job):
     expects_input = False
-    task_serializer: type[PipelineTaskSerializer] = DAGTopologicalSerializer
+    task_serializer: type[PipelineTaskSerializer] = TopologicalSerializer
 
     def __init__(self):
         self.tasks: dict[Job, set[Job]] = {}         

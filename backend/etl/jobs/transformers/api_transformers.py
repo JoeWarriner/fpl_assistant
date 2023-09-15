@@ -193,7 +193,7 @@ class PlayerPerformanceAdapter(Adapter):
 
 
 def get_fixture( fixture_fpl_id):
-    return dal.session.scalars(
+    return dal.execute_scalars(
         select(tbl.Fixture)
         .join(tbl.Season, tbl.Season.id == tbl.Fixture.season_id)
         .where(tbl.Fixture.fpl_id == fixture_fpl_id)

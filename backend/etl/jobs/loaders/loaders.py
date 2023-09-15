@@ -14,7 +14,7 @@ class DBLoader(Loader):
     def __init__(self, table: DeclarativeBase):
         self.table = table
     
-    def run(self, data):
+    def transaction_run(self, data):
         log(f'Loading to table: {self.table}')
         if isinstance(data, dict):
             self.load_single(data)
@@ -40,7 +40,7 @@ class DBLoader(Loader):
 
 class UpdatePredictions(Loader):
 
-    def run(self, data: dict[int, float]):
+    def transaction_run(self, data: dict[int, float]):
         for player_fixture_id, predicted_score in data.items():
             dal.session.execute(
                 update(

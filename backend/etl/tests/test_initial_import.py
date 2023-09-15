@@ -3,7 +3,7 @@ import database.tables as tbl
 from database.data_access_layer import dal
 from etl.pipeline_management.base_pipeline import Pipeline
 from etl.tests.utils import PathsForTests
-from etl.tests.db_fixtures import database
+from database.test_utils import empty_database
 from etl.imports.initial_import import  InitialImport
 
 InitialImport.pathlib = PathsForTests
@@ -24,7 +24,7 @@ from sqlalchemy.orm import aliased
 
 
 @pytest.fixture
-def seasons_import(database):
+def seasons_import(empty_database):
     orchestrator = Pipeline()
     orchestrator.add_task(initial_import.seasons)
     return orchestrator
@@ -34,7 +34,7 @@ def test_seasons_import(seasons_import):
     seasons_import.run()
     test_season = dal.session.scalar(select(tbl.Season).where(tbl.Season.start_year == 2022))
     assert test_season.season == '2022-23'
-    all_seasons = dal.session.execute(select(tbl.Season)).all()
+    all_seasons = dal.execute_transaction(select(tbl.Season)).all()
     assert len(all_seasons)  == 2
 
 
@@ -49,7 +49,7 @@ def test_players_import(players_import):
     test_player = dal.session.scalar(select(tbl.Player).where(tbl.Player.first_name == 'Trent'))
     assert test_player.second_name == 'Alexander-Arnold'
     assert test_player.fpl_id == 169187
-    all_players = dal.session.execute(select(tbl.Player)).all()
+    all_players = dal.execute_transaction(select(tbl.Player)).all()
     assert len(all_players) == 3
 
 
@@ -64,7 +64,7 @@ def test_teams_import(teams_import):
     test_team = dal.session.scalar(select(tbl.Team).where(tbl.Team.short_name == 'LIV'))
     assert test_team.team_name == 'Liverpool'
     assert test_team.fpl_id == 14
-    all_teams = dal.session.execute(select(tbl.Team)).all()
+    all_teams = dal.execute_transaction(select(tbl.Team)).all()
     assert len(all_teams) == 11
 
 @pytest.fixture
@@ -88,7 +88,7 @@ def positions_import(team_seasons_import: Pipeline):
     
 def test_positions_import(positions_import):
     positions_import.run()
-    test_position = dal.session.scalar(select(tbl.Position).where(tbl.Position.short_name == 'DEF'))
+    test_position = dal.execute_scalar(select(tbl.Position).where(tbl.Position.short_name == 'DEF'))
     assert test_position.pos_name == 'Defender'
 
 
@@ -162,7 +162,7 @@ def player_performances_import(fixtures_import: Pipeline):
 
 
 def query_player_performance(gameweek, season, first_name):
-    output  = dal.session.execute(
+    output  = dal.execute_transaction(
         select(
             tbl.Team.short_name,
             tbl.PlayerPerformance.was_home,

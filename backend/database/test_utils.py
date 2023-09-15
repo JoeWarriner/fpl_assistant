@@ -15,21 +15,20 @@ def empty_database():
     dal.connect()
     dal.reset_tables()
     dal.session = dal.Session()
-    yield
-    dal.session.rollback()
+    try:
+        yield
+    except Exception as e:
+        dal.session.rollback()
+        dal.session.close()
+        raise Exception from e
     dal.session.close()
 
 
 @pytest.fixture
-def populated_database():
-    dal.conn_string = 'postgresql+psycopg2://postgres@localhost/fftest'
-    dal.connect()
-    dal.reset_tables()
+def populated_database(empty_database):
     populate_database()
-    dal.session = dal.Session()
     yield
-    dal.session.rollback()
-    dal.session.close()
+
 
 
 def populate_database():
@@ -64,7 +63,7 @@ def populate_database():
 
 @pytest.fixture
 def populated_database_with_predictions(populated_database):
-    dal.session.execute(update(tbl.PlayerFixture).values(
+    dal.execute_transaction(update(tbl.PlayerFixture).values(
         predicted_score = 2.7
     )
     )

@@ -72,14 +72,7 @@ class SimpleRollingMeanPrediction(Job):
         return output
     
     
-    def update_future_fixture_predictions(self, player_fixture_ids: list[int], prediction: float):
-        for player_fixture_id in player_fixture_ids:
-            dal.session.execute(
-                update(tbl.PlayerFixture)  
-                .where(tbl.PlayerFixture.id == player_fixture_id)
-                .values(predicted_score = prediction)
-            )
-        
+
             
     def run(self):
         players = self.get_current_players()

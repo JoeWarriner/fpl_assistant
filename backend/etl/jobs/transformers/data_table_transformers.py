@@ -18,7 +18,7 @@ class DataTableTransformer(Transformer):
     def get_seasons_table(self):
         if  self.seasons_table is  None:
             season_query = 'SELECT id as season_id, season FROM seasons' 
-            self.seasons_table = pd.DataFrame(dal.session.execute(sqlalchemy.text(season_query)))
+            self.seasons_table = pd.DataFrame(dal.execute_transaction(sqlalchemy.text(season_query)))
 
     def convert_season_ids(self, data: pd.DataFrame):
         self.get_seasons_table()
@@ -67,7 +67,7 @@ class TeamTransformer(DataTableTransformer):
 class TeamSeasonTransformer(DataTableTransformer):
     def do_transformations(self, data: pd.DataFrame) -> pd.DataFrame:
         teams_query = f'SELECT id as team, fpl_id as fpl_perm_id FROM teams' 
-        teams = pd.DataFrame(dal.session.execute(sqlalchemy.text(teams_query)))
+        teams = pd.DataFrame(dal.execute_transaction(sqlalchemy.text(teams_query)))
 
         data = data[['team', 'team_code', 'season_id']].drop_duplicates(
             ).rename(columns={'team_code': 'fpl_perm_id', 'team': 'fpl_temp_id'}
@@ -85,10 +85,10 @@ class TeamSeasonTransformer(DataTableTransformer):
 class PlayerSeasonTransformer(DataTableTransformer):
     def do_transformations(self, data: pd.DataFrame) -> pd.DataFrame:
         positions_query = f'SELECT id as position, fpl_id as position_fpl_id FROM positions;'
-        positions = pd.DataFrame(dal.session.execute(sqlalchemy.text(positions_query)))
+        positions = pd.DataFrame(dal.execute_transaction(sqlalchemy.text(positions_query)))
 
         player_query = F'SELECT id as player, fpl_id as player_fpl_id FROM players;'
-        players = pd.DataFrame(dal.session.execute(sqlalchemy.text(player_query)))
+        players = pd.DataFrame(dal.execute_transaction(sqlalchemy.text(player_query)))
 
         player_data = data[['code', 'id', 'element_type', 'season_id']].merge(
                         positions, how='left', left_on=['element_type'], right_on=['position_fpl_id']
@@ -124,10 +124,10 @@ class FixturesTransformer(DataTableTransformer):
 
 
         team_season_query = f'SELECT fpl_id as team_season_id, team_id, season_id as season FROM team_seasons;'
-        team_seasons = pd.DataFrame(dal.session.execute(sqlalchemy.text(team_season_query)).all())
+        team_seasons = pd.DataFrame(dal.execute_transaction(sqlalchemy.text(team_season_query)).all())
 
         gameweek_query = f'SELECT id as gameweek_id, season_id as season, gw_number FROM gameweeks;'
-        gameweeks = pd.DataFrame(dal.session.execute(sqlalchemy.text(gameweek_query)).all())
+        gameweeks = pd.DataFrame(dal.execute_transaction(sqlalchemy.text(gameweek_query)).all())
     
 
         fixtures_data = fixtures_data.merge(
@@ -172,10 +172,10 @@ class PlayerPerformanceTransformer(DataTableTransformer):
     def do_transformations(self, data: pd.DataFrame) -> pd.DataFrame:
 
         fixtures_query = 'SELECT id as fixture, season_id, fpl_id as fpl_fixture_id, away_team_id, home_team_id, away_team_difficulty, home_team_difficulty from fixtures;'
-        fixtures = pd.DataFrame(dal.session.execute(sqlalchemy.text(fixtures_query)).all())
+        fixtures = pd.DataFrame(dal.execute_transaction(sqlalchemy.text(fixtures_query)).all())
 
         players_query = 'SELECT player_id, season_id, fpl_id as fpl_player_season_id from player_seasons;'
-        players = pd.DataFrame(dal.session.execute(sqlalchemy.text(players_query)).all())
+        players = pd.DataFrame(dal.execute_transaction(sqlalchemy.text(players_query)).all())
 
         player_performances_columns = [
             'element',

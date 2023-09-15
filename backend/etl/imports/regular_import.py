@@ -8,7 +8,7 @@ import etl.jobs.extractors.api.api_models as api_models
 import etl.jobs.extractors.api_extractors as extractor
 import etl.jobs.transformers.api_transformers as api_transformers
 import etl.jobs.loaders.loaders as loaders
-from etl.modelling.prediction_modelling import SimpleRollingMeanPrediction
+from etl.modelling.random_forest import RandomForestCompositePredictor 
 from etl.jobs.extractors.api.api_download import APIDownloader
 from etl.utils.file_handlers import ProjectFiles
 
@@ -93,7 +93,7 @@ class RegularImport(Job):
         )
 
         self.update_player_predictions = ModellingPipeline(
-            model= SimpleRollingMeanPrediction(), 
+            model= RandomForestCompositePredictor(), 
             loader=loaders.UpdatePredictions()
         )
     

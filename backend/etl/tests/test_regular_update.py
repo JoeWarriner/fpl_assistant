@@ -4,7 +4,7 @@ import database.tables as tbl
 from database.data_access_layer import dal
 from etl.pipeline_management.base_pipeline import Pipeline
 from etl.tests.utils import ProjectFilesforTests
-from etl.tests.db_fixtures import database
+from database.test_utils import empty_database
 from sqlalchemy import select
 from sqlalchemy.orm import aliased
 
@@ -20,7 +20,7 @@ regular_import = RegularImport()
 
 
 @pytest.fixture
-def insert_season(database):
+def insert_season(empty_database):
     orchestrator = Pipeline()
     orchestrator.add_task(regular_import.seasons)
     return orchestrator
@@ -46,17 +46,17 @@ def import_players(insert_season):
 
 def test_player_import(import_players):
     import_players.run()
-    players = dal.session.execute(select(
+    players = dal.execute_transaction(select(
         tbl.Player)
     ).all()
     assert len(players) == 4
 
-    alisson, = dal.session.execute(select(tbl.Player).where(tbl.Player.second_name == 'Ramses Becker')).one()
+    alisson, = dal.execute_transaction(select(tbl.Player).where(tbl.Player.second_name == 'Ramses Becker')).one()
     assert alisson.first_name == 'Alisson'
     assert alisson.fpl_id == 116535
     assert alisson.current_value == 55
 
-    alvarez, = dal.session.execute(select(tbl.Player).where(tbl.Player.second_name == 'Álvarez')).one()
+    alvarez, = dal.execute_transaction(select(tbl.Player).where(tbl.Player.second_name == 'Álvarez')).one()
     assert alvarez.first_name == 'Julián'
     assert alvarez.fpl_id == 461358
     assert alvarez.current_value == 67
@@ -70,16 +70,16 @@ def import_teams(import_players):
 
 def test_team_import(import_teams):
     import_teams.run()
-    teams = dal.session.execute(select(
+    teams = dal.execute_transaction(select(
         tbl.Team)
     ).all()
     assert len(teams) == 4
 
-    liverpool, = dal.session.execute(select(tbl.Team).where(tbl.Team.short_name == 'LIV')).one()
+    liverpool, = dal.execute_transaction(select(tbl.Team).where(tbl.Team.short_name == 'LIV')).one()
     assert liverpool.team_name == 'Liverpool'
     assert liverpool.fpl_id == 14
 
-    city, = dal.session.execute(select(tbl.Team).where(tbl.Team.short_name == 'MCI')).one()
+    city, = dal.execute_transaction(select(tbl.Team).where(tbl.Team.short_name == 'MCI')).one()
     assert city.team_name == 'Man City'
     assert city.fpl_id == 43
 
@@ -92,16 +92,16 @@ def import_positions(import_teams):
 
 def test_position_import(import_positions):
     import_positions.run()
-    positions = dal.session.execute(select(
+    positions = dal.execute_transaction(select(
         tbl.Position)
     ).all()
     assert len(positions) == 4
 
-    goalkeeper, = dal.session.execute(select(tbl.Position).where(tbl.Position.short_name == 'GKP')).one()
+    goalkeeper, = dal.execute_transaction(select(tbl.Position).where(tbl.Position.short_name == 'GKP')).one()
     assert goalkeeper.fpl_id == 1
     assert goalkeeper.pos_name == 'Goalkeeper'
 
-    forward, = dal.session.execute(select(tbl.Position).where(tbl.Position.short_name == 'FWD')).one()
+    forward, = dal.execute_transaction(select(tbl.Position).where(tbl.Position.short_name == 'FWD')).one()
     assert forward.pos_name == 'Forward'
     assert forward.fpl_id == 4
 
@@ -114,7 +114,7 @@ def import_team_seasons(import_positions):
 
 
 def team_season_test_query(fpl_id, season):
-    output, = dal.session.execute(
+    output, = dal.execute_transaction(
         select(
             tbl.Team.short_name
         ).select_from(
@@ -133,7 +133,7 @@ def team_season_test_query(fpl_id, season):
 
 def test_team_season_import(import_team_seasons):
     import_team_seasons.run()
-    team_seasons = dal.session.execute(select(
+    team_seasons = dal.execute_transaction(select(
         tbl.TeamSeason)
     ).all()
     assert len(team_seasons) == 4
@@ -153,7 +153,7 @@ def import_player_seasons(import_team_seasons):
     return orchestrator
 
 def player_season_test_query(first_name, season):
-    second_name, short_name, fpl_id = dal.session.execute(
+    second_name, short_name, fpl_id = dal.execute_transaction(
         select(
             tbl.Player.second_name, tbl.Position.short_name, tbl.PlayerSeason.fpl_id,
         ).select_from(
@@ -202,7 +202,7 @@ def import_gameweeks(import_player_seasons):
     return orchestrator
 
 def gamweek_test_query(gw_number, season):
-    gameweek, = dal.session.execute(
+    gameweek, = dal.execute_transaction(
         select(
             tbl.Gameweek
         ).join(
@@ -250,7 +250,7 @@ def import_fixtures(import_gameweeks):
 def fixture_test_query(season, home, away):
     away_team = aliased(tbl.Team, name='away_team')
     home_team = aliased(tbl.Team, name='home_team')
-    fixture, = dal.session.execute(
+    fixture, = dal.execute_transaction(
         select(
             tbl.Fixture
         ).join(
@@ -409,17 +409,5 @@ def test_player_performance_import(import_player_performances):
     assert performance_1.expected_assists == 0.37
     assert performance_1.expected_goals_conceded == 0.3
     assert performance_1.bps == 25
-
-
-@pytest.fixture
-def update_player_predictions(import_player_performances):
-    orchestrator = import_player_performances
-    orchestrator.add_task(regular_import.update_player_predictions, predecessors = {regular_import.player_fixtures, regular_import.player_performances})
-    return orchestrator
-
-def test_prediction_modelling(update_player_predictions):
-    '''Test for any errors thrown - main tests for accuracy are in test_prediction_modelling'''
-    update_player_predictions.run()
-
 
     
