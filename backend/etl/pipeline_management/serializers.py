@@ -1,24 +1,23 @@
 from etl.jobs.base_job import Job
-from abc import ABC
+from abc import ABC, abstractmethod
 
-class PipelineTaskSerializer(ABC):
-    def __init__(self, task_predecessor_mapping: dict[Job, set[Job]]):
-        self.graph = task_predecessor_mapping
+JobDependencyMapping = dict[Job, set[Job]]
 
-
+class JobSerializer(ABC):
+    @abstractmethod
     def serialize() -> list[Job]:
         ...
 
 
-class SimpleSerializer(PipelineTaskSerializer):
-    def serialize(self) -> list[Job]:
-        return list(self.graph.keys())
+class SimpleSerializer(JobSerializer):
+    def serialize(self, graph: JobDependencyMapping) -> list[Job]:
+        return list(graph.keys())
 
 
 
-class TopologicalSerializer(PipelineTaskSerializer):
-    def serialize(self):
-    
+class TopologicalSerializer(JobSerializer):
+    def serialize(self, graph:  JobDependencyMapping):
+        self.graph = graph
         nodes_with_incoming_edges, nodes_without_incoming_edges = self._get_initial_node_lists()
         sorted_nodes = []
 

@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 import numpy as np
 from datetime import datetime
+from etl.modelling.basic_model import ModellingJob
 from typing import Callable, Union
 from dataclasses import dataclass
 
@@ -292,7 +293,7 @@ def get_points_from_goals_conceded(expected_goals_conceded, position):
 
 
 
-class IndividualOutcomePredictor:
+class IndividualOutcomePredictor(ModellingJob):
 
     def __init__(
             self, 
@@ -374,7 +375,7 @@ class IndividualOutcomePredictor:
 
 
 
-class RandomForestCompositePredictor(Job):
+class RandomForestCompositePredictor(ModellingJob):
     expects_input = False
 
     individual_predictors: list[IndividualOutcomePredictor]

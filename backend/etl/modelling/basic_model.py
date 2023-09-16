@@ -1,12 +1,17 @@
 from etl.jobs.base_job import Job
-
+from abc import ABC
 from database.data_access_layer import dal
 import database.tables as tbl
 from sqlalchemy import select, Result, Tuple, Sequence, update
 from decimal import Decimal
 from datetime import datetime
 
-class SimpleRollingMeanPrediction(Job):
+class ModellingJob(Job, ABC):
+    expects_input = False
+
+    
+
+class SimpleRollingMeanPrediction(ModellingJob):
     expects_input = False
     winodw_size: int
     today_date: datetime

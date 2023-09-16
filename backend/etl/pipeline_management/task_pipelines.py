@@ -9,7 +9,7 @@ from etl.pipeline_management.base_pipeline import Pipeline
 
 
 class DataImportPipeline(Pipeline):
-    task_serializer = SimpleSerializer
+    serializer = SimpleSerializer
 
     def __init__(self, extractor: Extractor, transformer: Transformer, loader: Loader):
         super().__init__()
@@ -18,10 +18,10 @@ class DataImportPipeline(Pipeline):
         self.loader = loader
 
     def run(self):
-        self.add_task(self.extractor)
+        self.add_job(self.extractor)
         if self.transformer: 
-            self.add_task(self.transformer)
-        self.add_task(self.loader)
+            self.add_job(self.transformer)
+        self.add_job(self.loader)
         super().run()
     
     def __repr__(self) -> str:
@@ -29,7 +29,7 @@ class DataImportPipeline(Pipeline):
 
 
 class ModellingPipeline(Pipeline):
-    task_serializer = SimpleSerializer
+    serializer = SimpleSerializer
 
     def __init__(self, model: Job, loader: Loader):
         super().__init__()
@@ -37,8 +37,8 @@ class ModellingPipeline(Pipeline):
         self.loader = loader
     
     def run(self):
-        self.add_task(self.model)
-        self.add_task(self.loader)
+        self.add_job(self.model)
+        self.add_job(self.loader)
         super().run()
     
     def __repr__(self) -> str:

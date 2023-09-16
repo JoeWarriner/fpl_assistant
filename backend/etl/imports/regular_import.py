@@ -100,18 +100,18 @@ class RegularImport(Job):
     
     def pipeline(self):
         pipeline = Pipeline()
-        pipeline.add_task(self.api_download)
-        pipeline.add_task(self.seasons)
-        pipeline.add_task(self.positions, predecessors={self.api_download})
-        pipeline.add_task(self.players, predecessors={self.seasons})
-        pipeline.add_task(self.teams, predecessors={self.seasons})
-        pipeline.add_task(self.team_seasons, predecessors={self.teams, self.seasons})
-        pipeline.add_task(self.gameweeks, predecessors={self.seasons})
-        pipeline.add_task(self.fixtures, predecessors={self.team_seasons, self.gameweeks})
-        pipeline.add_task(self.player_seasons, predecessors={self.team_seasons, self.seasons, self.players, self.positions})
-        pipeline.add_task(self.player_fixtures, predecessors={self.player_seasons, self.fixtures})
-        pipeline.add_task(self.player_performances, predecessors = {self.player_seasons, self.fixtures})
-        pipeline.add_task(self.update_player_predictions, predecessors = {self.player_performances, self.player_fixtures})
+        pipeline.add_job(self.api_download)
+        pipeline.add_job(self.seasons)
+        pipeline.add_job(self.positions, predecessors={self.api_download})
+        pipeline.add_job(self.players, predecessors={self.seasons})
+        pipeline.add_job(self.teams, predecessors={self.seasons})
+        pipeline.add_job(self.team_seasons, predecessors={self.teams, self.seasons})
+        pipeline.add_job(self.gameweeks, predecessors={self.seasons})
+        pipeline.add_job(self.fixtures, predecessors={self.team_seasons, self.gameweeks})
+        pipeline.add_job(self.player_seasons, predecessors={self.team_seasons, self.seasons, self.players, self.positions})
+        pipeline.add_job(self.player_fixtures, predecessors={self.player_seasons, self.fixtures})
+        pipeline.add_job(self.player_performances, predecessors = {self.player_seasons, self.fixtures})
+        pipeline.add_job(self.update_player_predictions, predecessors = {self.player_performances, self.player_fixtures})
         return pipeline
 
     def run(self):

@@ -26,11 +26,11 @@ from sqlalchemy.orm import aliased
 @pytest.fixture
 def seasons_import(empty_database):
     orchestrator = Pipeline()
-    orchestrator.add_task(initial_import.seasons)
+    orchestrator.add_job(initial_import.seasons)
     return orchestrator
 
 
-def test_seasons_import(seasons_import):
+def test_seasons_import(seasons_import: Pipeline):
     seasons_import.run()
     test_season = dal.session.scalar(select(tbl.Season).where(tbl.Season.start_year == 2022))
     assert test_season.season == '2022-23'
@@ -41,10 +41,10 @@ def test_seasons_import(seasons_import):
 @pytest.fixture
 def players_import(seasons_import: Pipeline):
     orchestrator = seasons_import
-    orchestrator.add_task(initial_import.players, predecessors={initial_import.seasons})
+    orchestrator.add_job(initial_import.players, predecessors={initial_import.seasons})
     return orchestrator
 
-def test_players_import(players_import):
+def test_players_import(players_import: Pipeline):
     players_import.run()
     test_player = dal.session.scalar(select(tbl.Player).where(tbl.Player.first_name == 'Trent'))
     assert test_player.second_name == 'Alexander-Arnold'
@@ -56,10 +56,10 @@ def test_players_import(players_import):
 @pytest.fixture
 def teams_import(players_import: Pipeline):
     orchestrator = players_import
-    orchestrator.add_task(initial_import.teams, predecessors={initial_import.seasons})
+    orchestrator.add_job(initial_import.teams, predecessors={initial_import.seasons})
     return orchestrator
 
-def test_teams_import(teams_import):
+def test_teams_import(teams_import: Pipeline):
     teams_import.run()
     test_team = dal.session.scalar(select(tbl.Team).where(tbl.Team.short_name == 'LIV'))
     assert test_team.team_name == 'Liverpool'
@@ -70,7 +70,7 @@ def test_teams_import(teams_import):
 @pytest.fixture
 def team_seasons_import(teams_import:Pipeline):
     orchestrator = teams_import
-    orchestrator.add_task(initial_import.team_seasons, predecessors={initial_import.teams})
+    orchestrator.add_job(initial_import.team_seasons, predecessors={initial_import.teams})
     return orchestrator
 
 def test_team_seasons_import(team_seasons_import):
@@ -82,11 +82,11 @@ def test_team_seasons_import(team_seasons_import):
 @pytest.fixture
 def positions_import(team_seasons_import: Pipeline):
     orchestrator = team_seasons_import
-    orchestrator.add_task(initial_import.api_download)
-    orchestrator.add_task(initial_import.positions, predecessors={initial_import.api_download})
+    orchestrator.add_job(initial_import.api_download)
+    orchestrator.add_job(initial_import.positions, predecessors={initial_import.api_download})
     return orchestrator
     
-def test_positions_import(positions_import):
+def test_positions_import(positions_import: Pipeline):
     positions_import.run()
     test_position = dal.execute_scalar(select(tbl.Position).where(tbl.Position.short_name == 'DEF'))
     assert test_position.pos_name == 'Defender'
@@ -95,7 +95,7 @@ def test_positions_import(positions_import):
 @pytest.fixture
 def player_seasons_import(positions_import: Pipeline):
     orchestrator = positions_import
-    orchestrator.add_task(initial_import.player_seasons, predecessors={initial_import.players, initial_import.seasons, initial_import.positions})
+    orchestrator.add_job(initial_import.player_seasons, predecessors={initial_import.players, initial_import.seasons, initial_import.positions})
     return orchestrator
 
 def test_player_seasons_import(player_seasons_import):
@@ -107,7 +107,7 @@ def test_player_seasons_import(player_seasons_import):
 @pytest.fixture
 def gameweeks_import(player_seasons_import: Pipeline):
     orchestrator = player_seasons_import
-    orchestrator.add_task(initial_import.gameweeks, predecessors={initial_import.seasons})
+    orchestrator.add_job(initial_import.gameweeks, predecessors={initial_import.seasons})
     return orchestrator
 
 def test_gameweeks_import(gameweeks_import):
@@ -119,7 +119,7 @@ def test_gameweeks_import(gameweeks_import):
 @pytest.fixture
 def fixtures_import(gameweeks_import: Pipeline):
     orchestrator = gameweeks_import
-    orchestrator.add_task(initial_import.fixtures, predecessors={initial_import.gameweeks, initial_import.seasons, initial_import.team_seasons})
+    orchestrator.add_job(initial_import.fixtures, predecessors={initial_import.gameweeks, initial_import.seasons, initial_import.team_seasons})
     return orchestrator
 
 def test_fixtures_import(fixtures_import):
@@ -157,7 +157,7 @@ def test_fixtures_import(fixtures_import):
 @pytest.fixture
 def player_performances_import(fixtures_import: Pipeline):
     orchestrator = fixtures_import
-    orchestrator.add_task(initial_import.player_performances, predecessors={initial_import.fixtures, initial_import.player_seasons})
+    orchestrator.add_job(initial_import.player_performances, predecessors={initial_import.fixtures, initial_import.player_seasons})
     return orchestrator
 
 
@@ -190,7 +190,7 @@ def query_player_performance(gameweek, season, first_name):
 
 
 
-def test_player_performances_import(player_performances_import):
+def test_player_performances_import(player_performances_import: Pipeline):
     player_performances_import.run()
     performance_1 = query_player_performance(1, '2022-23', 'Trent')
     assert performance_1.short_name == 'ARS'
