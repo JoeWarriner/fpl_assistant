@@ -1,6 +1,8 @@
 from etl.jobs.base_job import Job
-from database.data_access_layer import dal
+from database.data_access_layer import DataAccessLayer
 from abc import ABC, abstractmethod
+
+dal = DataAccessLayer()
 
 class Loader(Job, ABC):
     expects_input = True

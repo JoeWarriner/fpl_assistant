@@ -4,11 +4,12 @@ from database.test_utils import populated_database
 
 from etl.modelling.basic_model import SimpleRollingMeanPrediction
 from etl.imports.initial_import import InitialImport
-from database.data_access_layer import dal
+from database.data_access_layer import DataAccessLayer
 import database.tables as tbl
 from datetime import datetime
 from sqlalchemy import select
 
+dal = DataAccessLayer()
 
 
 def test_get_current_players(populated_database):

@@ -1,11 +1,12 @@
 import pytest
 from pathlib import Path
-from database.data_access_layer import dal
+from database.data_access_layer import DataAccessLayer
 from datetime import datetime
 import database.tables as tbl
 from sqlalchemy import insert, update
 import pandas as pd
 
+dal = DataAccessLayer()
 
 test_data_path = Path(__file__).parent / 'test_data'
 

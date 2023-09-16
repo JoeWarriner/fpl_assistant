@@ -1,13 +1,14 @@
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy import update
 
-from database.data_access_layer import dal
+from database.data_access_layer import DataAccessLayer
 import database.tables as tbl
 
 from sqlalchemy.orm import  DeclarativeBase
 from etl.jobs.loaders.base_loader import Loader
 from etl.utils.logging import log
 
+dal = DataAccessLayer()
 
 
 class DBLoader(Loader):

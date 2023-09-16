@@ -18,7 +18,7 @@ sys.path.append(os.getcwd())
 
 
 from etl.jobs.base_job import Job
-from database.data_access_layer import dal
+from database.data_access_layer import DataAccessLayer
 import database.tables as tbl
 
 from sqlalchemy import select
@@ -26,6 +26,7 @@ from sklearn.ensemble  import RandomForestClassifier, RandomForestRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, median_absolute_error, r2_score
 import pandas as pd
 
+dal = DataAccessLayer()
 
 
 def get_historic_performance_data():

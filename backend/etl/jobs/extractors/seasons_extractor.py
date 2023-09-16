@@ -1,10 +1,12 @@
 import datetime
 from pathlib import Path
 import os
-from database.data_access_layer import dal
+from database.data_access_layer import DataAccessLayer
 from etl.jobs.extractors.base_extractor import Extractor
 from etl.utils.logging import log
 data_path = Path(os.getcwd(), 'etl', 'input', 'data')
+
+dal = DataAccessLayer()
 
 
 PRIOR_SEASONS_LABELS = [

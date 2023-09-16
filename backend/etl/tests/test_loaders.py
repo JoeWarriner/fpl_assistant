@@ -6,7 +6,9 @@ from database.test_utils import populated_database
 from sqlalchemy import select
 
 import database.tables as tbl
-from database.data_access_layer import dal
+from database.data_access_layer import DataAccessLayer
+
+dal = DataAccessLayer()
 
 def test_update_predictions(populated_database):
 

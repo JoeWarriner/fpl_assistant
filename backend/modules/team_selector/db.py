@@ -1,10 +1,12 @@
 import pandas as pd 
-from database.data_access_layer import dal
+from database.data_access_layer import DataAccessLayer
 import database.tables as tbl
 
 from modules.shared_models import Player
 import modules.shared_queries as queries
 from sqlalchemy import select
+
+dal = DataAccessLayer()
 
 def get_player_data() -> pd.DataFrame:
 

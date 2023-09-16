@@ -1,4 +1,4 @@
-from database.data_access_layer import dal
+from database.data_access_layer import DataAccessLayer
 from etl.jobs.base_job import Job
 from etl.imports.initial_import import InitialImport
 from etl.imports.regular_import import RegularImport
@@ -12,6 +12,7 @@ command_functions = {
 
 parser = ArgumentParser()
 parser.add_argument('command')
+dal = DataAccessLayer()
 args = parser.parse_args()
 task = command_functions.get(args.command)()
 dal.connect()

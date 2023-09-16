@@ -6,9 +6,11 @@ from abc import ABC, abstractmethod
 from sqlalchemy import select
 from sqlalchemy.orm import Session, DeclarativeBase
 from etl.utils.logging import log
-from database.data_access_layer import dal
+from database.data_access_layer import DataAccessLayer
 import database.tables as tbl
 import etl.jobs.extractors.api.api_models as api_models
+
+dal = DataAccessLayer()
 
 class APITransformer(Transformer):
     def __init__(self, adapter: type[Adapter]):

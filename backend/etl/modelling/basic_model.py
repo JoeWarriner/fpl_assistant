@@ -1,10 +1,12 @@
 from etl.jobs.base_job import Job
 from abc import ABC
-from database.data_access_layer import dal
+from database.data_access_layer import DataAccessLayer
 import database.tables as tbl
 from sqlalchemy import select, Result, Tuple, Sequence, update
 from decimal import Decimal
 from datetime import datetime
+
+dal = DataAccessLayer()
 
 class ModellingJob(Job, ABC):
     expects_input = False

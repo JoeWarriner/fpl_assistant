@@ -1,7 +1,7 @@
 import pytest
 from datetime import datetime, date
 import database.tables as tbl 
-from database.data_access_layer import dal
+from database.data_access_layer import DataAccessLayer
 from etl.pipeline_management.base_pipeline import Pipeline
 from etl.tests.utils import ProjectFilesforTests
 from database.test_utils import empty_database
@@ -14,6 +14,7 @@ RegularImport.file_handler = ProjectFilesforTests
 RegularImport.today_date = date(2023,9,1)
 regular_import = RegularImport()
 
+dal = DataAccessLayer()
 
 
 

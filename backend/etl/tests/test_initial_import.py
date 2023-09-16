@@ -1,6 +1,6 @@
 import pytest
 import database.tables as tbl
-from database.data_access_layer import dal
+from database.data_access_layer import DataAccessLayer
 from etl.pipeline_management.base_pipeline import Pipeline
 from etl.tests.utils import PathsForTests
 from database.test_utils import empty_database
@@ -18,7 +18,7 @@ from sqlalchemy.orm import aliased
 
 
 
-
+dal = DataAccessLayer()
 
 
 

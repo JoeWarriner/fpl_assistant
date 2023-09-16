@@ -6,10 +6,17 @@ from database.tables import Base
 
 class DataAccessLayer:
     session: Session
+    engine = None
+    conn_string = 'postgresql+psycopg2://postgres@localhost/fantasyfootballassistant'
 
     def __init__(self): 
-        self.engine = None
-        self.conn_string = 'postgresql+psycopg2://postgres@localhost/fantasyfootballassistant'
+        pass
+    
+    def __new__(cls):
+        if not hasattr(cls, 'instance'):
+            cls.instance = super(DataAccessLayer, cls).__new__(cls)
+        return cls.instance
+
 
     def connect(self): 
         self.engine = create_engine(self.conn_string)
@@ -57,9 +64,8 @@ class DataAccessLayer:
         else:
             self.session.commit()
             return output
+        
+        
 
      
-
-
-dal = DataAccessLayer() 
 

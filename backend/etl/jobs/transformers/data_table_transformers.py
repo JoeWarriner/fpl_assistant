@@ -1,11 +1,13 @@
 from typing import Callable
 from etl.jobs.transformers.base_transformer import Transformer
-from database.data_access_layer import dal
+from database.data_access_layer import DataAccessLayer
 from datetime import datetime
 import pandas as pd
 import sqlalchemy
 from etl.utils.logging import log
 from typing import Any
+
+dal = DataAccessLayer()
 
 class DataTableTransformer(Transformer):
     dataframe: pd.DataFrame
