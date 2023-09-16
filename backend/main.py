@@ -19,18 +19,6 @@ app.add_middleware(CORSMiddleware, allow_origins=['*'])
 app.include_router(players.router)
 app.include_router(team_selector.router)
 
-@app.get('/best-team')
-async def best_team():
-    '''
-    Get an optimised team:
-    http://localhost:8000/best-team
-    '''
-    
-    with open('data/current_best_team.json') as file:
-        team = json.loads(file.read())
-        
-    return team
-
 
 
 

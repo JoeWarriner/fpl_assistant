@@ -23,14 +23,15 @@ class APITransformer(Transformer):
 
 
 
-class Adapter:
+class Adapter(ABC):
     input: object
     table_ref: type[DeclarativeBase]
     table: DeclarativeBase
 
     def __init__(self):
         self.table = self.table_ref()
- 
+    
+    @abstractmethod
     def transform(self):
         ...
     

@@ -20,7 +20,7 @@ export const getPlayers = async (pageSize: number, offSet: number): Promise<Play
 
 export const getOptimalTeam = async (pageSize: number, offSet: number) => {
     try {
-        const response = await fetch("http://127.0.0.1:8000/team-selector");
+        const response = await fetch("http://127.0.0.1:8000/optimised-team");
         const team: Player[] = await response.json() as Player[];
         return team;
     } catch (error)  {

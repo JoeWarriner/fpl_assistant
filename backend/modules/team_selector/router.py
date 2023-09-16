@@ -6,7 +6,7 @@ import modules.team_selector.db as db
 from modules.team_selector.optimiser import get_optimised_team
 
 router = APIRouter(
-    prefix='/team-selector'
+    prefix='/optimised-team'
 )
 
 
