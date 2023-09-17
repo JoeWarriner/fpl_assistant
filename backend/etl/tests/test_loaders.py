@@ -11,7 +11,7 @@ from database.data_access_layer import DataAccessLayer
 dal = DataAccessLayer()
 
 def test_update_predictions(populated_database):
-
+    """Test new predictions will load to database"""
     test_predictions = {
         1: 7,
         2: 3

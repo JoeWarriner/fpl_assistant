@@ -29,13 +29,15 @@ def generic_team() -> list[list[int]]:
     ] 
 
 
-def test_optimised_team__basic_case(generic_team : list[list[int]]):
+def test_optimised_team__basic_case(generic_team:  list[list[int]]):
+    """When presented with 15 players making a legal team, will the optimiser return that list?"""
     data = pd.DataFrame(columns = COLUMNS, data = generic_team)
     output = optimiser.get_optimised_team(data)
     assert len(output) == 15
 
 
 def test_optimised_team__poor_value_player(generic_team: list[list[int]]):
+    """Will the optimiser exclude a poor value player"""
     # Change defender with ID #7 to have low predicted points
     generic_team[6][2] = 1 
     # Add a better value defender at the end
@@ -49,6 +51,7 @@ def test_optimised_team__poor_value_player(generic_team: list[list[int]]):
     assert 16 in output
 
 def test_optimised_team__high_value_player(generic_team: list[list[int]]):
+    """Will the optimiser include a good value player"""
     # Add a MUCH better value defender at the end
     generic_team.append(
         [16, 65, 100, 2, 3]
@@ -59,6 +62,7 @@ def test_optimised_team__high_value_player(generic_team: list[list[int]]):
 
     
 def test_optimised_team__too_expensive_player(generic_team: list[list[int]]):
+    """Will the optimiser exclude a player that exceeds the cost constraint"""
     # Add a MUCH better value defender at the end, who is too expensive
     generic_team.append(
         [16, 300, 100, 2, 3]
@@ -69,6 +73,7 @@ def test_optimised_team__too_expensive_player(generic_team: list[list[int]]):
 
 
 def test_optimised_team__too_many_same_team_players(generic_team: list[list[int]]):
+    """Will the optimiser exclude high value players that exceed the same team constraint"""
     # Add a series of MUCH better value players, but who are on the same team.
     generic_team.extend([
         [16, 1, 100, 1, 3],
@@ -82,6 +87,7 @@ def test_optimised_team__too_many_same_team_players(generic_team: list[list[int]
 
 
 def test_optimised_team__too_many_same_position_players(generic_team: list[list[int]]):
+    """Will the optimiser exlclude high value players the exceed the same position constraint"""
     # Add a series of MUCH better value players, but who are all the same position
     generic_team.extend([
         [16, 1, 100, 4, 6],

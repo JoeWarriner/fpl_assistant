@@ -13,6 +13,7 @@ dal = DataAccessLayer()
 
 
 def test_get_current_players(populated_database):
+    """Test mean prediction DB query"""
     prediction_job = SimpleRollingMeanPrediction()
     players = prediction_job.get_current_players()
     assert len(players) == 2
@@ -27,6 +28,7 @@ def test_get_player_recent_performances(populated_database):
     assert performances[1] == 3
 
 def test_calculate_mean():
+    """Test calculation of mean for simple prediction"""
     performances = [2,3,3]
     prediction_job = SimpleRollingMeanPrediction()
     mean = prediction_job.calculate_mean(performances)

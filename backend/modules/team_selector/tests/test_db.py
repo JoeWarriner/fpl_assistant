@@ -5,6 +5,9 @@ from database.test_utils import populated_database_with_predictions
 import pandas as pd
 
 def test_get_player_data(populated_database_with_predictions):
+    """
+    Test returning player data from DB for API
+    """
     output = db.get_player_data()
     expected_output = pd.DataFrame(
         columns = ['id', 'current_value', 'predicted_score', 'position_id','team_id'],
@@ -15,6 +18,9 @@ def test_get_player_data(populated_database_with_predictions):
     pd.testing.assert_frame_equal(output, expected_output)
 
 def test_get_players_from_list(populated_database_with_predictions):
+    """
+    Test producing correct Player object for API response.
+    """
     alisson, = db.get_players_from_list([2])
     assert alisson.first_name == 'Alisson'
     assert alisson.second_name == 'Ramses Becker'

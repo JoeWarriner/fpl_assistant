@@ -7,11 +7,10 @@ from etl.tests.utils import PathsForTests
 SEASONS = ['2021-22', '2022-23']
 
 
-
-        
-
-
 def test_df_player_extract():
+    '''
+    Successful extract of player data from tables.
+    '''
     extractor = DataTableExtractor(SEASONS, filename='players_raw.csv', pathlib=PathsForTests)
     output = extractor.run()
     expected_output = pd.DataFrame(
@@ -31,6 +30,9 @@ def test_df_player_extract():
 
 
 def test_df_gameweek_extract():
+    """
+    Successful extract of gameweek data from tavbles.
+    """
     extractor = DataTableExtractor(SEASONS, filename=Path('gws', 'merged_gw.csv'), pathlib=PathsForTests)
     output = extractor.run()
     expected_output = pd.DataFrame(

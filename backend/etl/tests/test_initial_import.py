@@ -31,6 +31,7 @@ def seasons_import(empty_database):
 
 
 def test_seasons_import(seasons_import: Pipeline):
+    '''Full import of seasons to db from data tables'''
     seasons_import.run()
     test_season = dal.session.scalar(select(tbl.Season).where(tbl.Season.start_year == 2022))
     assert test_season.season == '2022-23'
@@ -45,6 +46,7 @@ def players_import(seasons_import: Pipeline):
     return orchestrator
 
 def test_players_import(players_import: Pipeline):
+    '''Full import of players to db from data tables'''
     players_import.run()
     test_player = dal.session.scalar(select(tbl.Player).where(tbl.Player.first_name == 'Trent'))
     assert test_player.second_name == 'Alexander-Arnold'
@@ -60,6 +62,7 @@ def teams_import(players_import: Pipeline):
     return orchestrator
 
 def test_teams_import(teams_import: Pipeline):
+    '''Full import of teams to db from data tables'''
     teams_import.run()
     test_team = dal.session.scalar(select(tbl.Team).where(tbl.Team.short_name == 'LIV'))
     assert test_team.team_name == 'Liverpool'
@@ -74,6 +77,7 @@ def team_seasons_import(teams_import:Pipeline):
     return orchestrator
 
 def test_team_seasons_import(team_seasons_import):
+    '''Full import of team_seasons to db from data tables'''
     team_seasons_import.run()
     test_team_season = dal.session.scalar(select(tbl.TeamSeason).join(tbl.TeamSeason.team).join(tbl.TeamSeason.season).where(tbl.Team.short_name == 'LIV' and tbl.Season.start_year == 2022))
     assert test_team_season.fpl_id == 12
@@ -81,6 +85,7 @@ def test_team_seasons_import(team_seasons_import):
 
 @pytest.fixture
 def positions_import(team_seasons_import: Pipeline):
+    '''Full import of positions to db from data tables'''
     orchestrator = team_seasons_import
     orchestrator.add_job(initial_import.api_download)
     orchestrator.add_job(initial_import.positions, predecessors={initial_import.api_download})
@@ -94,6 +99,7 @@ def test_positions_import(positions_import: Pipeline):
 
 @pytest.fixture
 def player_seasons_import(positions_import: Pipeline):
+    '''Full import of player_seasons to db from data tables'''
     orchestrator = positions_import
     orchestrator.add_job(initial_import.player_seasons, predecessors={initial_import.players, initial_import.seasons, initial_import.positions})
     return orchestrator
@@ -106,6 +112,7 @@ def test_player_seasons_import(player_seasons_import):
 
 @pytest.fixture
 def gameweeks_import(player_seasons_import: Pipeline):
+    '''Full import of gameweeks to db from data tables'''
     orchestrator = player_seasons_import
     orchestrator.add_job(initial_import.gameweeks, predecessors={initial_import.seasons})
     return orchestrator
@@ -118,6 +125,7 @@ def test_gameweeks_import(gameweeks_import):
 
 @pytest.fixture
 def fixtures_import(gameweeks_import: Pipeline):
+    '''Full import of fixtures to db from data tables'''
     orchestrator = gameweeks_import
     orchestrator.add_job(initial_import.fixtures, predecessors={initial_import.gameweeks, initial_import.seasons, initial_import.team_seasons})
     return orchestrator
@@ -162,6 +170,7 @@ def player_performances_import(fixtures_import: Pipeline):
 
 
 def query_player_performance(gameweek, season, first_name):
+    
     output  = dal.execute_transaction(
         select(
             tbl.Team.short_name,
@@ -191,6 +200,7 @@ def query_player_performance(gameweek, season, first_name):
 
 
 def test_player_performances_import(player_performances_import: Pipeline):
+    '''Full import of player_performanes to db from data tables'''
     player_performances_import.run()
     performance_1 = query_player_performance(1, '2022-23', 'Trent')
     assert performance_1.short_name == 'ARS'

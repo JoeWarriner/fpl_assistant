@@ -2,11 +2,11 @@ import type {Player} from '../types/player';
 import React from 'react';
 
 
-interface rowProps {
+interface RowProps {
     player: Player
 }
 
-export function PlayerRow(props: rowProps){
+export function PlayerRow(props: RowProps){
     const player = props.player
     return (
             <tr>

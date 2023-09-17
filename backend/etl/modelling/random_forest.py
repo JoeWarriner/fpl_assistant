@@ -9,7 +9,6 @@ import sys
 from pathlib import Path
 import numpy as np
 from datetime import datetime
-from etl.modelling.basic_model import ModellingJob
 from typing import Callable, Union
 from dataclasses import dataclass
 
@@ -19,11 +18,13 @@ sys.path.append(os.getcwd())
 
 from etl.jobs.base_job import Job
 from database.data_access_layer import DataAccessLayer
+from etl.modelling.basic_model import ModellingJob
 import database.tables as tbl
 
 from sqlalchemy import select
 from sklearn.ensemble  import RandomForestClassifier, RandomForestRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, median_absolute_error, r2_score
+from sklearn.inspection import permutation_importance
 import pandas as pd
 
 dal = DataAccessLayer()
@@ -61,6 +62,7 @@ def get_historic_performance_data():
             tbl.PlayerPerformance.expected_assists,
             tbl.PlayerPerformance.expected_goals,
             tbl.PlayerPerformance.expected_goals_conceded,
+            tbl.PlayerPerformance.player_value,
 
             # Context data:
             tbl.PlayerPerformance.difficulty,
@@ -106,7 +108,7 @@ COLUMNS_TO_AGGREGATE = [
             'expected_goals_conceded'
         ]
 
-WINDOW_SIZES = [3, 5,7, 10]
+WINDOW_SIZES = [4,7,10]
 
 
 
@@ -151,8 +153,11 @@ def clean_historic_data(data):
 
 def split_training_and_test(data: pd.DataFrame):
     ## Break into training and test data:
-    training_data = data[data['kickoff_time'] <= datetime(2023,4,15)].reset_index()
-    test_data = data[data['kickoff_time'] > datetime(2023,4,15)].reset_index()
+    shuffled_data = data.sample(frac=1)
+    test_data, *training_data = np.array_split(shuffled_data, 4)
+    training_data = pd.concat(training_data).reset_index()
+    test_data = pd.DataFrame(test_data).reset_index()
+
 
     return training_data, test_data
 
@@ -161,8 +166,7 @@ def generate_data_for_testing():
     data = get_historic_performance_data()
     data_with_features = clean_historic_data(data)
     training_data, test_data = split_training_and_test(data_with_features)
-    return test_data, training_data
-
+    return training_data,test_data
 
 def get_future_fixtures():
     future_fixtures = dal.execute_transaction(select(
@@ -209,7 +213,7 @@ def generate_data_for_production():
         fixtures = fixtures.join(agg_data, on = 'player_id', rsuffix= suffix)
     fixtures = fixtures.dropna().reset_index()
     assert fixtures['fixture_id'].is_unique
-    return fixtures, training_data        
+    return training_data, fixtures
         
 
 
@@ -237,6 +241,22 @@ def get_feature_set(full_dataset: pd.DataFrame, additional_cols =[]):
 
     return feature_set
 
+
+def get_feature_set_alt(full_dataset: pd.DataFrame, additional_cols =[]):
+    feature_columns = []
+    for col in COLUMNS_TO_AGGREGATE:
+         for n in WINDOW_SIZES:
+              feature_columns.append(f'{col}_{n}_game_mean')
+    feature_columns.extend(
+        ['difficulty'],
+    )
+
+    feature_columns.extend(additional_cols)
+
+    # print(feature_columns)
+    feature_set = full_dataset[feature_columns]
+
+    return feature_set
 
 
 
@@ -324,10 +344,32 @@ class IndividualOutcomePredictor(ModellingJob):
         self.classifier.fit(feature_set, target_col)
 
 
+        
+
+
 
     def predict_probabilities(self) -> list[list[int]]:
         ## Get feature set
         feature_set = self.generate_featureset(self.future_fixtures)
+
+        
+        ## Look at feature importances:
+        result = permutation_importance(
+        self.classifier, feature_set, self.future_fixtures[self.col_to_predict], n_repeats=10, random_state=42, n_jobs=2
+        )
+
+        feature_importances = pd.DataFrame(
+            {
+                'feature': feature_set.columns,
+                'importance': result.importances_mean 
+                
+            }
+        )
+
+        importances = feature_importances.sort_values('importance')
+        importances.to_csv(f'feature_importances_{self.col_to_predict}.csv')
+
+
         predicted_probs = self.classifier.predict_proba(feature_set)
         return predicted_probs
 
@@ -442,9 +484,9 @@ class RandomForestCompositePredictor(ModellingJob):
         return output
 
     def calculate_final_expected_points(self, predictions: pd.DataFrame, expected_points_cols: list[str]) -> pd.DataFrame:
-        first_col, *remaining_cols = expected_points_cols
-        predictions['total_expected_points'] = predictions[first_col]
-        for col in remaining_cols:
+        cols = expected_points_cols
+        predictions['total_expected_points'] = 2
+        for col in cols:
             predictions['total_expected_points'] = predictions['total_expected_points'] + predictions[col]
         return predictions
     
@@ -483,102 +525,187 @@ MODEL TESTING (this code is not used in the application or pipeline.)
 
 """
 
-if __name__ == "__main__":
 
-    # Run prediction with historic data split into training/test.
-    predictor = RandomForestCompositePredictor(
-        index_col = 'performance_id')
-    predictor.get_data = generate_data_for_testing
-    _ = predictor.run()
-    model_output = predictor.predictions
+POS_FEATURE_COLS = {
 
-    # Save to csv so we can inspect:
-    model_output.to_csv('temp__model_evaluation_results.csv') 
+        'DEF': [
+            'difficulty',
+        ],
+        'GKP':[
+            'saves_10_game_mean',
+            'expected_goals_conceded_10_game_mean',
+            'total_points_4_game_mean',
+            'influence_10_game_mean',
+            'bps_10_game_mean',
+            'influence_4_game_mean',
+            'saves_4_game_mean',
+            'total_points_10_game_mean'
 
+        ],
 
-    # ## How did we do? Basic MAE / MSE / Median absolute error
-    # Using the rolling mean as a baseline.
-    print(f"MODEL MAE : {mean_absolute_error(model_output['total_points'], model_output['total_expected_points'])}")
-    print(f"MODEL MSE : {mean_squared_error(model_output['total_points'], model_output['total_expected_points'])}")
-    print(f"MODEL Median Absolute Error: {median_absolute_error(model_output['total_points'], model_output['total_expected_points'])}")
-    print(f"MODEL R2: {r2_score(model_output['total_points'], model_output['total_expected_points'])}")
+        'MID':[
+            'assists_4_game_mean',
+            'bps_10_game_mean',
+            'creativity_4_game_mean',
+            'creativity_7_game_mean',
+            'influence_10_game_mean',
+            'creativity_10_game_mean',
+            'threat_4_game_mean',
+            'total_points_10_game_mean',
+            'threat_7_game_mean',
+            'expected_goals_10_game_mean',
+            'threat_10_game_mean'
 
+        ],
+        # 'FWD':[
+        #     'expected_goals_10_game_mean',
 
-    print(f'BASELINE MAE: {mean_absolute_error(model_output["total_points"], model_output["total_points_10_game_mean"])}')
-    print(f'BASELINEMSE: {mean_squared_error(model_output["total_points"], model_output["total_points_10_game_mean"])}')
-    print(f"BASELINE Median AE : {median_absolute_error(model_output['total_points'], model_output['total_points_10_game_mean'])}")
-    print(f"BASELINE R2: {r2_score(model_output['total_points'], model_output['total_points_10_game_mean'])}")
-
-
-    
-    #  I also wanted to look at how well the model RANKED performances 
-    #  (Ultimately we're more interested in differentating between performances than predicting their value precisely) 
-
-    # Sort by the different measures (model / baseline / actual)
-    ranking_cols = (
-        ('total_points','actual_ranking'),
-        ('total_expected_points', 'model_ranking'),
-        ('total_points_10_game_mean', 'baseline_ranking') 
-    )
-
-    for data_column, ranking_column in ranking_cols: 
-        model_output = (model_output
-                        .sort_values(by=data_column)
-                        .reset_index(drop = True)
-                        .reset_index(names = ranking_column))
-        
-    ## Print various metrics to console:
-    print(f'MODEL MAE (ORDERING): {mean_absolute_error(model_output["actual_ranking"], model_output["model_ranking"])}')
-    print(f'MODEL median absolute error (ORDERING): {median_absolute_error(model_output["actual_ranking"], model_output["model_ranking"])}')
-
-    print(f'BASELINE MAE (ORDERING): {mean_absolute_error(model_output["actual_ranking"], model_output["baseline_ranking"])}')
-    print(f'BASELINE median absolute error (ORDERING): {median_absolute_error(model_output["actual_ranking"], model_output["baseline_ranking"])}')
-
-    # How about just the highest performers?
-    print(f'MODEL MAE (ORDERING - TOP 100 ): {mean_absolute_error(model_output["actual_ranking"].tail(100), model_output["model_ranking"].tail(100))}')
-    print(f'BASELINE MAE (ORDERING - TOP 100): {mean_absolute_error(model_output["actual_ranking"].tail(100), model_output["baseline_ranking"].tail(100))}')
-
-
-    player_all_games = model_output.groupby('player_id')[['total_points', 'total_expected_points', 'total_points_10_game_mean']].sum()
-
-    print(f' MODEL MAE (ALL GAMES COMBINED):{mean_absolute_error(player_all_games["total_points"], player_all_games["total_expected_points"])}')
-    print(f' MODEL r2 (ALL GAMES COMBINED):{r2_score(player_all_games["total_points"], player_all_games["total_expected_points"])}')
-    
-    print(f' BASELINE MAE (ALL GAMES COMBINED):{mean_absolute_error(player_all_games["total_points"], player_all_games["total_points_10_game_mean"])}')
-    print(f' BASELINE r2 (ALL GAMES COMBINED):{r2_score(player_all_games["total_points"], player_all_games["total_points_10_game_mean"])}')
-    
-
-    
+        # ]
 
 
 
-    ## Try a random forest regressor:
-    test_data, training_data = generate_data_for_testing()
+    }   
+
+
+
+
+
+def get_position_feature_importances(test_data: pd.DataFrame, training_data: pd.DataFrame, pos: str):
+    test_data = test_data[test_data['position'] == pos]
+    training_data = training_data[training_data['position'] == pos]
+
+
 
     y = training_data['total_points']
-    extra_cols = [
-        'total_points_10_game_mean',
-        'total_points_7_game_mean',
-        'total_points_5_game_mean',
-        'total_points_3_game_mean',
-    ]
 
-    x = get_feature_set(training_data, extra_cols)
-    regressor = RandomForestRegressor(n_estimators=500)
+    if POS_FEATURE_COLS.get(pos):
+            x=training_data[POS_FEATURE_COLS[pos]]
+            test_x = test_data[POS_FEATURE_COLS[pos]]
+    else:
+        extra_cols = [
+            # 'total_points_18_game_mean',
+            'total_points_10_game_mean',
+            # 'total_points_9_game_mean',
+            # 'total_points_8_game_mean',
+            # 'total_points_7_game_mean',
+            # 'total_points_6_game_mean',
+            # 'total_points_5_game_mean',
+            'total_points_4_game_mean',
+            # 'total_points_3_game_mean',
+            # 'total_points_2_game_mean',
+            # 'total_points_1_game_mean',
+        ]
+        x = get_feature_set_alt(training_data, extra_cols)
+        test_x = get_feature_set_alt(test_data, extra_cols)
+
+    print(x.columns)
+    regressor = RandomForestRegressor(n_estimators=300)
     regressor.fit(x, y)
+
     
 
-    test_x = get_feature_set(test_data, extra_cols)
+
+   
+    # test_x = get_feature_set_alt(test_data, extra_cols)
+
+    
     predictions = regressor.predict(test_x)
 
+    result = permutation_importance(
+        regressor, test_x, test_data['total_points'], n_repeats=10, random_state=42, n_jobs=2
+    )
 
+    feature_importances = pd.DataFrame(
+        {
+            'feature': x.columns,
+            'importance': result.importances_mean 
+            
+        }
+    )
+    importances = feature_importances.sort_values('importance')
+    importances.to_csv(f'feature_importances_{pos}.csv')
+    
+
+
+    print(f'MODEL RESULTS FOR POS: {pos}')
     print(f"REGRESSOR MAE : {mean_absolute_error(test_data['total_points'], predictions)}")
     print(f"REGRESSOR MSE : {mean_squared_error(test_data['total_points'], predictions)}")
     print(f"REGRESSOR Median Absolute Error: {median_absolute_error(test_data['total_points'], predictions)}")
     print(f"REGRESSOR R2: {r2_score(test_data['total_points'], predictions)}")
 
 
-            
+if __name__ == '__main__':    ## Try a random forest regressor:
+    training_data, test_data = generate_data_for_testing()
+    get_position_feature_importances(test_data, training_data, 'GKP')
+    get_position_feature_importances(test_data, training_data, 'DEF')
+    get_position_feature_importances(test_data, training_data, 'MID')
+    get_position_feature_importances(test_data, training_data, 'FWD')
+    
+         
+    # # Run prediction with historic data split into training/test.
+    # predictor = RandomForestCompositePredictor(
+    #     index_col = 'performance_id')
+    # predictor.get_data = generate_data_for_testing
+    # _ = predictor.run()
+    # model_output = predictor.predictions
+
+    # # Save to csv so we can inspect:
+    # model_output.to_csv('temp__model_evaluation_results.csv') 
+
+
+    # # ## How did we do? Basic MAE / MSE / Median absolute error
+    # # Using the rolling mean as a baseline.
+    # print(f"MODEL MAE : {mean_absolute_error(model_output['total_points'], model_output['total_expected_points'])}")
+    # print(f"MODEL MSE : {mean_squared_error(model_output['total_points'], model_output['total_expected_points'])}")
+    # print(f"MODEL Median Absolute Error: {median_absolute_error(model_output['total_points'], model_output['total_expected_points'])}")
+    # print(f"MODEL R2: {r2_score(model_output['total_points'], model_output['total_expected_points'])}")
+
+
+    # print(f'BASELINE MAE: {mean_absolute_error(model_output["total_points"], model_output["total_points_10_game_mean"])}')
+    # print(f'BASELINEMSE: {mean_squared_error(model_output["total_points"], model_output["total_points_10_game_mean"])}')
+    # print(f"BASELINE Median AE : {median_absolute_error(model_output['total_points'], model_output['total_points_10_game_mean'])}")
+    # print(f"BASELINE R2: {r2_score(model_output['total_points'], model_output['total_points_10_game_mean'])}")
+
+
+    
+    # #  I also wanted to look at how well the model RANKED performances 
+    # #  (Ultimately we're more interested in differentating between performances than predicting their value precisely) 
+
+    # # Sort by the different measures (model / baseline / actual)
+    # ranking_cols = (
+    #     ('total_points','actual_ranking'),
+    #     ('total_expected_points', 'model_ranking'),
+    #     ('total_points_10_game_mean', 'baseline_ranking') 
+    # )
+
+    # for data_column, ranking_column in ranking_cols: 
+    #     model_output = (model_output
+    #                     .sort_values(by=data_column)
+    #                     .reset_index(drop = True)
+    #                     .reset_index(names = ranking_column))
+        
+    # ## Print various metrics to console:
+    # print(f'MODEL MAE (ORDERING): {mean_absolute_error(model_output["actual_ranking"], model_output["model_ranking"])}')
+    # print(f'MODEL median absolute error (ORDERING): {median_absolute_error(model_output["actual_ranking"], model_output["model_ranking"])}')
+
+    # print(f'BASELINE MAE (ORDERING): {mean_absolute_error(model_output["actual_ranking"], model_output["baseline_ranking"])}')
+    # print(f'BASELINE median absolute error (ORDERING): {median_absolute_error(model_output["actual_ranking"], model_output["baseline_ranking"])}')
+
+    # # How about just the highest performers?
+    # print(f'MODEL MAE (ORDERING - TOP 100 ): {mean_absolute_error(model_output["actual_ranking"].tail(100), model_output["model_ranking"].tail(100))}')
+    # print(f'BASELINE MAE (ORDERING - TOP 100): {mean_absolute_error(model_output["actual_ranking"].tail(100), model_output["baseline_ranking"].tail(100))}')
+
+
+    # player_all_games = model_output.groupby('player_id')[['total_points', 'total_expected_points', 'total_points_10_game_mean']].sum()
+
+    # print(f' MODEL MAE (ALL GAMES COMBINED):{mean_absolute_error(player_all_games["total_points"], player_all_games["total_expected_points"])}')
+    # print(f' MODEL r2 (ALL GAMES COMBINED):{r2_score(player_all_games["total_points"], player_all_games["total_expected_points"])}')
+    
+    # print(f' BASELINE MAE (ALL GAMES COMBINED):{mean_absolute_error(player_all_games["total_points"], player_all_games["total_points_10_game_mean"])}')
+    # print(f' BASELINE r2 (ALL GAMES COMBINED):{r2_score(player_all_games["total_points"], player_all_games["total_points_10_game_mean"])}')
+    
+
+    
 
         
 

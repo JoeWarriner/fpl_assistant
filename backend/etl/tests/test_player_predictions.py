@@ -5,6 +5,7 @@ import pandas as pd
 
 class TestRandomForestCompositePredictor:
     def test_calculate_final_expected_points(self):
+        """Test collation of expected points for different measures"""
         test_df = pd.DataFrame(
             columns = ['a', 'b', 'c', 'd'],
             data =[
@@ -57,6 +58,7 @@ class TestIndividualOutcomePredictor:
             self,                                
             individual_outcome_predictor: IndividualOutcomePredictor
         ):
+        """ Test converting predicted probabilities from array to dataframe."""
 
         test_probs = [
             [2,2,2],
@@ -73,6 +75,7 @@ class TestIndividualOutcomePredictor:
             self,                                
             individual_outcome_predictor: IndividualOutcomePredictor
         ):
+        """Test calculation of expected measure values from probabilities """
 
         test_probs = [
             [2,2,2],
@@ -86,6 +89,7 @@ class TestIndividualOutcomePredictor:
             self,
             individual_outcome_predictor: IndividualOutcomePredictor
             ):
+        """Test calculation of expected points from expected values."""
 
         test_fixtures = pd.DataFrame(
             columns = ['position'], 
@@ -103,6 +107,7 @@ class TestIndividualOutcomePredictor:
         assert output == expected_output
     
     def test_complete_predictor(self, individual_outcome_predictor: IndividualOutcomePredictor):
+        """End to end test of individual measure predition"""
         test_probs = [
             [0.5, 0.3,0.2],
             [1, 0,0]
