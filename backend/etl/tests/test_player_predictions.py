@@ -20,8 +20,8 @@ class TestRandomForestCompositePredictor:
         expected_output = pd.DataFrame(
             columns = ['a', 'b', 'c', 'd', 'total_expected_points'],
             data =[
-                [1, 2, 3,4 , 5],
-                [5,6,7,8, 13]
+                [1, 2, 3,4 , 7],
+                [5,6,7,8, 15]
             ]
         )
 

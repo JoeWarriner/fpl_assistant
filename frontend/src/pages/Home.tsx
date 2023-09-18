@@ -16,7 +16,6 @@ const Home = () => {
                             <Nav className="ms-auto">
                                 <Nav.Link href="/">Home</Nav.Link>
                                 <Nav.Link href="/team-selector/">Team</Nav.Link>
-                                <Nav.Link href="/trade/">Trades</Nav.Link>
                                 <Nav.Link href="/player_data">Player Data</Nav.Link>
                             </Nav>
                             </Navbar.Collapse>

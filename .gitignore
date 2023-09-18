@@ -1,5 +1,5 @@
 venv/
 __pycache__
-files/
 db_logs.txt
 temp_*
+*/files/api_data/*

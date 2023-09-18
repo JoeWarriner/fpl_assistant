@@ -43,7 +43,7 @@ class UpdatePredictions(Loader):
 
     def transaction_run(self, data: dict[int, float]):
         for player_fixture_id, predicted_score in data.items():
-            dal.session.execute(
+            dal.execute_transaction(
                 update(
                     tbl.PlayerFixture
                 )
