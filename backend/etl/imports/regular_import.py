@@ -12,6 +12,9 @@ from etl.modelling.random_forest import RandomForestCompositePredictor
 from etl.jobs.extractors.api.api_download import APIDownloader
 from etl.utils.file_handlers import ProjectFiles
 
+"""
+Container class to specify jobs/pipelines run in regular import from API.
+"""
 
 
 class RegularImport(Job):

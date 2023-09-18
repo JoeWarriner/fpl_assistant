@@ -1,10 +1,12 @@
 import requests
 from pathlib import Path
 from etl.utils.paths import ProjectPaths
-from datetime import datetime, date
 import shutil
 import json
 
+"""
+Code to download the full FPL API output and save to file.
+"""
 
 MAIN_ENDPOINT = 'https://fantasy.premierleague.com/api/bootstrap-static/'
 FIXTURES_ENDPOINT = 'https://fantasy.premierleague.com/api/fixtures/'

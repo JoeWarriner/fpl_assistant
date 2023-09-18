@@ -5,6 +5,9 @@ from etl.utils.logging import log
 
 
 class Pipeline(Job):
+    """
+    Pipeline class that aggregates and serializers data processing jobs.
+    """
     expects_input = False
     serializer: type[JobSerializer] = TopologicalSerializer
     jobs: JobDependencyMapping

@@ -1,4 +1,3 @@
-from datetime import date
 import database.tables as tbl 
 from pathlib import Path
 from etl.jobs.base_job import Job
@@ -15,6 +14,9 @@ from etl.jobs.transformers.api_transformers import APITransformer, PositionAdapt
 from etl.jobs.loaders.loaders import DBLoader
 from etl.utils.file_handlers import ProjectFiles
 
+"""
+Comtainer class to specify jobs/pipelines run in the initial database import.
+"""
 
 class InitialImport(Job):
     expects_input = False

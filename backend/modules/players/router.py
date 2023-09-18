@@ -1,5 +1,4 @@
 from fastapi import APIRouter
-
 from modules.shared_models import Player
 from modules.players.db import get_players
 

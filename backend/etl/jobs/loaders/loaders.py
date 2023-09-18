@@ -12,6 +12,11 @@ dal = DataAccessLayer()
 
 
 class DBLoader(Loader):
+    """
+    Main class for loading to the database.
+    Accepts a single dict or list of dicts mapping fieldnames to data.
+    Inserts if no matching record exists, or updates if one does.
+    """
     def __init__(self, table: DeclarativeBase):
         self.table = table
     
@@ -40,6 +45,9 @@ class DBLoader(Loader):
 
 
 class UpdatePredictions(Loader):
+    """
+    Loader class for updating player predicted scores.
+    """
 
     def transaction_run(self, data: dict[int, float]):
         for player_fixture_id, predicted_score in data.items():

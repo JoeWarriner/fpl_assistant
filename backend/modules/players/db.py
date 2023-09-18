@@ -1,6 +1,4 @@
-import database.tables as tbl
 from database.data_access_layer import DataAccessLayer
-
 from modules.shared_models import Player
 import modules.shared_queries as queries
 

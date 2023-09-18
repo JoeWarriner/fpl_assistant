@@ -1,33 +1,29 @@
-### STEPS
-## Prepare raw data - all player performances, split by season
-## Calculate rolling averages
-## Run a random forest model!
-## Integrate back into pipeline
-
 import os
 import sys
-from pathlib import Path
 import numpy as np
 from datetime import datetime
-from typing import Callable, Union
+from typing import Callable
 from dataclasses import dataclass
 
 ## Get access to imports (assumes running from backend directory)
 sys.path.append(os.getcwd())
 
 
-from etl.jobs.base_job import Job
 from database.data_access_layer import DataAccessLayer
 from etl.modelling.basic_model import ModellingJob
 import database.tables as tbl
-
 from sqlalchemy import select
-from sklearn.ensemble  import RandomForestClassifier, RandomForestRegressor
+from sklearn.ensemble  import RandomForestClassifier
 from sklearn.metrics import mean_absolute_error, mean_squared_error, median_absolute_error, r2_score
-from sklearn.inspection import permutation_importance
 import pandas as pd
 
+"""
+Code for running and testing/evaluating the random forest prediction model.
+"""
 
+"""
+Data preparation code
+"""
 
 def get_historic_performance_data():
     """
@@ -149,7 +145,10 @@ def clean_historic_data(data):
     return data
 
 def split_training_and_test(data: pd.DataFrame):
-    ## Break into training and test data:
+    """
+    Split data into training and test sets, usign random partition of full dataset.
+    Only used for model testing and evaluation.
+    """
     shuffled_data = data.sample(frac=1)
     test_data, *training_data = np.array_split(shuffled_data, 4)
     training_data = pd.concat(training_data).reset_index()
@@ -160,12 +159,19 @@ def split_training_and_test(data: pd.DataFrame):
 
 
 def generate_data_for_testing():
+    """
+    Data preparation for model testing and evaluation - not used in production.
+    """
     data = get_historic_performance_data()
     data_with_features = clean_historic_data(data)
     training_data, test_data = split_training_and_test(data_with_features)
     return training_data,test_data
 
 def get_future_fixtures():
+    """
+    Get data that will provide the features for prediction in production.
+    (i.e. future player fixtures)
+    """
     future_fixtures = dal.execute_transaction(select(
         tbl.PlayerFixture.id.label('fixture_id'),
         tbl.PlayerFixture.player_id,
@@ -188,9 +194,15 @@ def get_future_fixtures():
     return pd.DataFrame(future_fixtures)
 
 def generate_data_for_production():
+    """
+    Generate data for modelling in production
+    """
+    # Training data - historic player performances
     data = get_historic_performance_data()
     training_data = clean_historic_data(data)
 
+    # First find the players who have sufficient data to predict
+    # (i..e at least 10 previous games worth of data)   
     data = data[data['minutes_played'] > 60]
     data = data.sort_values('kickoff_time')
     recent_performances = data.groupby('player_id').tail(10)
@@ -198,9 +210,11 @@ def generate_data_for_production():
     players_with_10_performances = n_performances[n_performances == 10].index
     data_to_analyse = recent_performances[recent_performances['player_id'].isin(players_with_10_performances)]
 
-
+    # Get full set of future fixtures
     fixtures = get_future_fixtures()
     assert fixtures['fixture_id'].is_unique
+
+    ## We used the last 10 historic performances as features for all future fixtures.
     for window_size in WINDOW_SIZES:
         agg_data = data_to_analyse.groupby('player_id').tail(window_size)
         agg_data = agg_data.groupby('player_id')[COLUMNS_TO_AGGREGATE].mean()
@@ -210,16 +224,15 @@ def generate_data_for_production():
         fixtures = fixtures.join(agg_data, on = 'player_id', rsuffix= suffix)
     fixtures = fixtures.dropna().reset_index()
     assert fixtures['fixture_id'].is_unique
+
+
     return training_data, fixtures
         
 
-
-
-
-
-
-
 def get_feature_set(full_dataset: pd.DataFrame, additional_cols =[]):
+    """
+    Extract only the columns used as features in the model
+    """
     feature_columns = []
     for col in COLUMNS_TO_AGGREGATE:
          for n in WINDOW_SIZES:
@@ -239,26 +252,10 @@ def get_feature_set(full_dataset: pd.DataFrame, additional_cols =[]):
     return feature_set
 
 
-def get_feature_set_alt(full_dataset: pd.DataFrame, additional_cols =[]):
-    feature_columns = []
-    for col in COLUMNS_TO_AGGREGATE:
-         for n in WINDOW_SIZES:
-              feature_columns.append(f'{col}_{n}_game_mean')
-    feature_columns.extend(
-        ['difficulty'],
-    )
 
-    feature_columns.extend(additional_cols)
-
-    # print(feature_columns)
-    feature_set = full_dataset[feature_columns]
-
-    return feature_set
-
-
-
-    
-
+"""
+Functions to calculate points from expected measure values.
+"""
 
 def get_expected_points_from_assists(expected_assists, *args, **kwargs):
     return expected_assists * 3
@@ -273,7 +270,6 @@ def get_expected_points_from_goals(expected_goals, position):
     else:
         raise ValueError(f'Position type {position} not recognised')
     
-
 def get_expected_points_from_clean_sheets(expected_clean_sheets, position):
     if position == 'GKP' or position == 'DEF':
         return expected_clean_sheets * 4
@@ -307,11 +303,8 @@ def get_points_from_goals_conceded(expected_goals_conceded, position):
         raise ValueError(f'Position type {position} not recognised')
 
 
-
-
-
-
 class IndividualOutcomePredictor(ModellingJob):
+    """ Produce predicted values for an individual measure (e.g. assists)"""
 
     def __init__(
             self, 
@@ -334,27 +327,17 @@ class IndividualOutcomePredictor(ModellingJob):
         self.expected_value_col_name = f'expected_num_{self.col_to_predict}'
         self.expected_points_col_name = f'expected_points_from_{self.col_to_predict}'
 
-
     def fit_model(self):
         feature_set = self.generate_featureset(self.previous_performances)
         target_col = self.previous_performances[self.col_to_predict]
         self.classifier.fit(feature_set, target_col)
 
-
-        
-
-
-
     def predict_probabilities(self) -> list[list[int]]:
-        ## Get feature set
         feature_set = self.generate_featureset(self.future_fixtures)
-
-
         predicted_probs = self.classifier.predict_proba(feature_set)
         return predicted_probs
 
     def convert_predicted_probs_to_dataframe(self, predicted_probs):
-        # Add results to dataframe
         column_names = [f'prob_{self.col_to_predict}_{i}' for i in range(len(predicted_probs[0]))]
         probs_df = pd.DataFrame(
             columns= column_names,
@@ -362,9 +345,7 @@ class IndividualOutcomePredictor(ModellingJob):
         )
         return probs_df
     
-
     def calculate_expected_values(self, predicted_probs):
-        ## Calculate expected value from probabilites:
         expected_values =  []
         for row in predicted_probs:
             expected_value = 0
@@ -399,7 +380,9 @@ class IndividualOutcomePredictor(ModellingJob):
 
 
 class RandomForestCompositePredictor(ModellingJob):
-    expects_input = False
+    """
+    Class to handle overall random forest prediction.
+    Manages and aggregate predictions for all measures."""
 
     individual_predictors: list[IndividualOutcomePredictor]
     previous_performances: pd.DataFrame
@@ -428,7 +411,6 @@ class RandomForestCompositePredictor(ModellingJob):
             'yellow_cards': get_points_from_yellows,
             'saves': get_expected_points_from_saves
         }
-
 
         individual_predictors =  [
             IndividualOutcomePredictor(
@@ -476,7 +458,6 @@ class RandomForestCompositePredictor(ModellingJob):
             output_dict[row[self.index_col]] = row['total_expected_points']
         return output_dict
     
-
     def run(self):
         self.previous_performances, self.future_fixtures = self.get_data()
         individual_predictors = self.generate_individual_predictors()
@@ -497,7 +478,7 @@ MODEL TESTING (this code is not used in the application or pipeline.)
 
 
 if __name__ == '__main__':  
-
+    # Connect to database
     dal = DataAccessLayer()
     dal.connect()
     dal.session = dal.Session()
@@ -514,20 +495,12 @@ if __name__ == '__main__':
 
 
     # ## How did we do? Basic MAE / MSE / Median absolute error
-    # Using the rolling mean as a baseline.
     print(f"MODEL MAE : {mean_absolute_error(model_output['total_points'], model_output['total_expected_points'])}")
     print(f"MODEL MSE : {mean_squared_error(model_output['total_points'], model_output['total_expected_points'])}")
     print(f"MODEL Median Absolute Error: {median_absolute_error(model_output['total_points'], model_output['total_expected_points'])}")
     print(f"MODEL R2: {r2_score(model_output['total_points'], model_output['total_expected_points'])}")
 
 
-    print(f'BASELINE MAE: {mean_absolute_error(model_output["total_points"], model_output["total_points_10_game_mean"])}')
-    print(f'BASELINEMSE: {mean_squared_error(model_output["total_points"], model_output["total_points_10_game_mean"])}')
-    print(f"BASELINE Median AE : {median_absolute_error(model_output['total_points'], model_output['total_points_10_game_mean'])}")
-    print(f"BASELINE R2: {r2_score(model_output['total_points'], model_output['total_points_10_game_mean'])}")
-
-
-    
     #  I also wanted to look at how well the model RANKED performances 
     #  (Ultimately we're more interested in differentating between performances than predicting their value precisely) 
 
@@ -555,19 +528,8 @@ if __name__ == '__main__':
     print(f'MODEL MAE (ORDERING - TOP 100 ): {mean_absolute_error(model_output["actual_ranking"].tail(100), model_output["model_ranking"].tail(100))}')
     print(f'BASELINE MAE (ORDERING - TOP 100): {mean_absolute_error(model_output["actual_ranking"].tail(100), model_output["baseline_ranking"].tail(100))}')
 
-
-    player_all_games = model_output.groupby('player_id')[['total_points', 'total_expected_points', 'total_points_10_game_mean']].sum()
-
-    print(f' MODEL MAE (ALL GAMES COMBINED):{mean_absolute_error(player_all_games["total_points"], player_all_games["total_expected_points"])}')
-    print(f' MODEL r2 (ALL GAMES COMBINED):{r2_score(player_all_games["total_points"], player_all_games["total_expected_points"])}')
-    
-    print(f' BASELINE MAE (ALL GAMES COMBINED):{mean_absolute_error(player_all_games["total_points"], player_all_games["total_points_10_game_mean"])}')
-    print(f' BASELINE r2 (ALL GAMES COMBINED):{r2_score(player_all_games["total_points"], player_all_games["total_points_10_game_mean"])}')
-    
-
-    
-
-        
+  
+    # Close database session      
     dal.session.close()
 
     

@@ -1,8 +1,9 @@
-from typing import Any
-from typing_extensions import SupportsIndex
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from database.tables import Base
+"""
+Code for accessing the database and transation managemment.
+"""
 
 class DataAccessLayer:
     session: Session

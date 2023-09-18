@@ -1,8 +1,6 @@
 from fastapi import APIRouter
-
 from modules.shared_models import Player
 import modules.team_selector.db as db
-
 from modules.team_selector.optimiser import get_optimised_team
 
 router = APIRouter(

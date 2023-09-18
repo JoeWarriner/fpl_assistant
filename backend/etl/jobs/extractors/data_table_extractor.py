@@ -4,6 +4,10 @@ from etl.utils.logging import log
 import pandas as pd
 
 class DataTableExtractor(Extractor):
+    """
+    Data table extractor class.
+    Extracts data for a particular file type combined across seasons.
+    """
     def __init__(self, seasons, filename, pathlib = ProjectPaths):
         self.seasons = seasons
         self.filename = filename
@@ -14,6 +18,8 @@ class DataTableExtractor(Extractor):
         season_data_list = []
         for season in self.seasons:
             path = self.pathlib.get_season_data_directory(season) / self.filename
+            
+            ## Different years use different file encodings (!) 
             try:
                 season_data = pd.read_csv(path, encoding = 'utf-8')
                 season_data['season'] = season
@@ -24,7 +30,6 @@ class DataTableExtractor(Extractor):
                 season_data_list.append(season_data)
             except FileNotFoundError:
                 print(f'No {self.filename} file found for season: {season}')
-            
             
         all_season_data = pd.concat(season_data_list)
         return all_season_data

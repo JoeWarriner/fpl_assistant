@@ -1,7 +1,10 @@
 from abc import ABC, abstractmethod
-from typing import Any
 
 class Job(ABC):
+    """
+    Base Job class.
+    Specificies interface for all data import tasks to implement.
+    """
 
     expects_input: bool
 

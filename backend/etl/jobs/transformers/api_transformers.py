@@ -1,10 +1,10 @@
 from __future__ import annotations
 from sqlalchemy.dialects.postgresql import insert
-from typing import Any, Optional
+from typing import Any
 from etl.jobs.transformers.base_transformer import Transformer
 from abc import ABC, abstractmethod
 from sqlalchemy import select
-from sqlalchemy.orm import Session, DeclarativeBase
+from sqlalchemy.orm import  DeclarativeBase
 from etl.utils.logging import log
 from database.data_access_layer import DataAccessLayer
 import database.tables as tbl
@@ -13,6 +13,10 @@ import etl.jobs.extractors.api.api_models as api_models
 dal = DataAccessLayer()
 
 class APITransformer(Transformer):
+    """
+    Handles API transformations. 
+    Accepts an Adaptor class that handles converting from API format to DB format.
+    """
     def __init__(self, adapter: type[Adapter]):
         self.adapter = adapter
     
@@ -26,6 +30,10 @@ class APITransformer(Transformer):
 
 
 class Adapter(ABC):
+    """
+    Abstract base class for API adapters.
+    Handles generic conversion tasks - child class implement "transform" method for table specific transformations
+    """
     input: object
     table_ref: type[DeclarativeBase]
     table: DeclarativeBase
@@ -56,7 +64,10 @@ class Adapter(ABC):
                     f'No data provided for field: {col}. '
                 )
         return output        
-            
+
+"""
+Adapters for individual tables:
+"""    
     
 class PlayerAdapter(Adapter):
     input: api_models.Player

@@ -1,10 +1,12 @@
 from pydantic import BaseModel
 from datetime import datetime
 from etl.utils.file_handlers import ProjectFiles
-from etl.utils.paths import ProjectPaths
 from typing import Optional
 
-
+"""
+Pydantic models specifying the data structures expected from the API.
+Models are also used for validation.
+"""
 
 class GameWeek(BaseModel):
     id: int

@@ -1,13 +1,15 @@
 import pytest
 from pathlib import Path
 from database.data_access_layer import DataAccessLayer
-from datetime import datetime
 import database.tables as tbl
-from sqlalchemy import insert, update
+from sqlalchemy import  update
 import pandas as pd
-
+"""
+Code to create a test database with basic test data. 
+Called from tests throughout the application.
+Test data used is in backend/database/test_data
+"""
 dal = DataAccessLayer()
-
 test_data_path = Path(__file__).parent / 'test_data'
 
 @pytest.fixture

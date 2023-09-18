@@ -4,18 +4,29 @@ from abc import ABC, abstractmethod
 JobDependencyMapping = dict[Job, set[Job]]
 
 class JobSerializer(ABC):
+    """
+    Base serializer class.
+    Serializers accept a job dependency mapping object, and return an ordered list of jobs.
+    """
     @abstractmethod
-    def serialize() -> list[Job]:
+    def serialize(self, graph: JobDependencyMapping) -> list[Job]:
         ...
 
 
 class SimpleSerializer(JobSerializer):
+    """
+    Serializes dependencies in order added to graph.
+    """
     def serialize(self, graph: JobDependencyMapping) -> list[Job]:
         return list(graph.keys())
 
 
 
 class TopologicalSerializer(JobSerializer):
+    """
+    Serializes a dag of jobs/dependencies
+    Finds an ordering that meets all dependency requirements.
+    """
     def serialize(self, graph:  JobDependencyMapping):
         self.graph = graph
         nodes_with_incoming_edges, nodes_without_incoming_edges = self._get_initial_node_lists()

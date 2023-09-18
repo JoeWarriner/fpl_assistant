@@ -1,7 +1,9 @@
 
 from sqlalchemy import Column, Integer, Boolean, String, TIMESTAMP, ForeignKey,  UniqueConstraint, Float
 from sqlalchemy.orm import relationship, DeclarativeBase
-
+"""
+Definition of database tables.
+"""
 class Base(DeclarativeBase):
     pass
 

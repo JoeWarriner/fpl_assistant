@@ -5,6 +5,10 @@ from abc import ABC, abstractmethod
 dal = DataAccessLayer()
 
 class Loader(Job, ABC):
+    """
+    Base loader class. 
+    Handles transaction commit and rollback for the entire load operation.
+    """
     expects_input = True
     
     @abstractmethod

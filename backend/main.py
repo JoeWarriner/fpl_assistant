@@ -1,14 +1,9 @@
-from fastapi import FastAPI, Query
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database.data_access_layer import DataAccessLayer
-import database.tables as tbl
-from typing import Optional
-from pydantic import BaseModel
-from sqlalchemy import select
 
 import modules.players.router as players
 import modules.team_selector.router as team_selector
-import json
 
 app = FastAPI()
 dal = DataAccessLayer()

@@ -9,6 +9,9 @@ from etl.pipeline_management.base_pipeline import Pipeline
 
 
 class DataImportPipeline(Pipeline):
+    """
+    Wrapper to provide a simplified interface to a pipeline object specific to ETL tasks.
+    """
     serializer = SimpleSerializer
 
     def __init__(self, extractor: Extractor, transformer: Transformer, loader: Loader):
@@ -29,6 +32,9 @@ class DataImportPipeline(Pipeline):
 
 
 class ModellingPipeline(Pipeline):
+    """
+    Wrapper to provide a simplified interface to Pipeline objects for modelling tasks.
+    """
     serializer = SimpleSerializer
 
     def __init__(self, model: Job, loader: Loader):

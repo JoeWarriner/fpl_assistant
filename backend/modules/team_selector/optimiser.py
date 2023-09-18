@@ -2,7 +2,11 @@ import pulp
 import pandas as pd 
 
 def get_optimised_team(player_data: pd.DataFrame) -> list[str]:
+    """
+    Accepts a dataframe of player data for a particular gameweek.
+    Returns an optimised, legal squad of 15 players.
 
+    """
     ## Extract relevant variables
     players = player_data['id']
     teams = player_data['team_id']

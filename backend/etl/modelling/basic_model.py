@@ -9,11 +9,15 @@ from datetime import datetime
 dal = DataAccessLayer()
 
 class ModellingJob(Job, ABC):
+    """Base modelling class."""
     expects_input = False
 
     
 
 class SimpleRollingMeanPrediction(ModellingJob):
+    """
+    Predict player scores with simple 10 game rolling mean of previous points scored.
+    """
     expects_input = False
     winodw_size: int
     today_date: datetime

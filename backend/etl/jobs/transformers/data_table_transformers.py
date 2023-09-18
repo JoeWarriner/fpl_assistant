@@ -1,4 +1,3 @@
-from typing import Callable
 from etl.jobs.transformers.base_transformer import Transformer
 from database.data_access_layer import DataAccessLayer
 from datetime import datetime
@@ -10,6 +9,9 @@ from typing import Any
 dal = DataAccessLayer()
 
 class DataTableTransformer(Transformer):
+    """
+    Base transformer class for data tables.
+    """
     dataframe: pd.DataFrame
 
     def __init__(self):
@@ -36,6 +38,9 @@ class DataTableTransformer(Transformer):
         dataframe = self.do_transformations(data)            
         return dataframe.to_dict(orient='records')
 
+"""
+Table specific transformations.
+"""
 
 class PlayerTransformer(DataTableTransformer):
     def do_transformations(self, data: pd.DataFrame):

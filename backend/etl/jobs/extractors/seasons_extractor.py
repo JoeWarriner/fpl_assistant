@@ -20,6 +20,12 @@ PRIOR_SEASONS_LABELS = [
 
 
 class CreateSeasonsFromList(Extractor):
+    """
+    "Extractor" to generate seasons data.
+    This isn't actually extracted from anywhere, its just derived from a list of seasons 
+    provided by the client.
+    Extractor terminology is used to provide a consistent interface.
+    """
     def __init__(self, seasons: list[str]) -> None:
         self.seasons = seasons
         self.now_month = datetime.datetime.now().month
@@ -51,6 +57,9 @@ def is_current_season_start_year( season_start_year: int, now_year: int, now_mon
 
 
 class CreateThisSeason(Extractor):
+    """
+    "Extractor" to produce data for a single season based on the current system date.
+    """
     def __init__(self, today_date: datetime.date):
         self.today_date = today_date
 
